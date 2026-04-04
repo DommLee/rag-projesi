@@ -5,6 +5,11 @@
 2. Open `http://localhost:18000/` (or fallback port printed by `30_run_api.bat`)
 3. Run one `news` ingestion job and one `query/insight`.
 
+## App Mode
+1. `100_run_app.bat`
+2. Use dashboard as end-user application.
+3. Stop with `101_stop_app.bat` (or close interactive launcher).
+
 ## Full Assignment Run
 1. `full_eval.bat`
 2. Validate:

@@ -43,6 +43,8 @@ Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with 
 - `GET /v1/diagnostics/{ticker}`
 
 ## Windows Profiles
+- Application launch: `100_run_app.bat`
+- Application stop: `101_stop_app.bat`
 - Fast demo: `fast_demo.bat`
 - Full evaluation: `full_eval.bat`
 - Full pipeline logs: `99_full_pipeline.bat`
@@ -102,3 +104,4 @@ python -m pytest -q
 - [Latest Run Summary](/D:/rag projesi/docs/latest_run_summary.md)
 - [Release Checklist](/D:/rag projesi/docs/release_checklist.md)
 - [GitHub Ready Status](/D:/rag projesi/docs/github_ready_status.md)
+- [App Quickstart](/D:/rag projesi/docs/app_quickstart.md)
