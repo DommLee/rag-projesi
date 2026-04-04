@@ -50,6 +50,7 @@ Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with 
 - Service cleanup step: `70_stop_services.bat`
 - Release bundle step: `80_release_bundle.bat`
 - GitHub readiness step: `90_github_ready.bat`
+- Publish step: `95_publish_git.bat` (set `REPO_URL` for first push)
 
 ## Resilience Flags
 - `SKIP_OLLAMA_PULL=1`: skip model pull in `00_setup.bat`

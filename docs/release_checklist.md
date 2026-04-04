@@ -17,6 +17,6 @@
 
 ## Delivery
 - Push source code and docs to GitHub.
+- Optional helper: `set REPO_URL=<repo-url> && 95_publish_git.bat`
 - Attach latest release zip and mention run-id used for the bundle.
 - Include rubric mapping and latest run summary links in README/PR.
-

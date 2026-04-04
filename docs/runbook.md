@@ -15,6 +15,9 @@
 3. Export latest report artifacts from `logs/eval_reports/`.
 4. Build release package: `80_release_bundle.bat` (or run `99_full_pipeline.bat` which calls it automatically).
 5. Generate GitHub readiness report: `90_github_ready.bat`.
+6. Publish branch:
+   - First time: `set REPO_URL=<repo-url> && 95_publish_git.bat`
+   - Next pushes: `95_publish_git.bat`
 
 ## Manual API Checks
 - `POST /v1/ingest/kap` with `delta_mode=true`
