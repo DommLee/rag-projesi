@@ -3,7 +3,7 @@
 - Artifacts OK: `True`
 - Git Branch: `codex/bist-agentic-rag-release-ready`
 - Git Remote Configured: `False`
-- Uncommitted Items: `8`
+- Uncommitted Items: `0`
 - Latest Release Zip: `D:\rag projesi\releases\bist_agentic_rag_release_20260404_192312.zip`
 
 ## Next Step
