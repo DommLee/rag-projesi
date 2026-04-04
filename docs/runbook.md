@@ -10,6 +10,11 @@
 2. Use dashboard as end-user application.
 3. Stop with `101_stop_app.bat` (or close interactive launcher).
 
+## Desktop GUI Mode
+1. `120_desktop_app.bat`
+2. Use desktop window controls for start/stop/query/eval.
+3. Stop services with `101_stop_app.bat` when done.
+
 ## Full Assignment Run
 1. `full_eval.bat`
 2. Validate:

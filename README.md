@@ -43,6 +43,7 @@ Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with 
 - `GET /v1/diagnostics/{ticker}`
 
 ## Windows Profiles
+- Desktop GUI app: `120_desktop_app.bat`
 - Application launch: `100_run_app.bat`
 - Application stop: `101_stop_app.bat`
 - Fast demo: `fast_demo.bat`
