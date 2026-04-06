@@ -7,6 +7,7 @@ from typing import Protocol
 import numpy as np
 
 from app.config import get_settings
+from app.ingestion.validation import validate_chunk_contract
 from app.models.embeddings import embed_text
 from app.schemas import DocumentChunk, SourceType
 
@@ -61,10 +62,15 @@ class InMemoryVectorStore(VectorStore):
         self._rows: list[tuple[list[float], DocumentChunk]] = []
 
     def upsert(self, chunks: list[DocumentChunk]) -> int:
+        inserted = 0
         for chunk in chunks:
+            ok, _ = validate_chunk_contract(chunk)
+            if not ok:
+                continue
             vector = embed_text(chunk.content)
             self._rows.append((vector, chunk))
-        return len(chunks)
+            inserted += 1
+        return inserted
 
     def search(
         self,

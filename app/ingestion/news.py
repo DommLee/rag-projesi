@@ -11,7 +11,7 @@ from app.ingestion.base import BaseIngestor
 from app.ingestion.chunking import RawDoc, build_chunks
 from app.ingestion.policy import LegalSafeCrawlerPolicy
 from app.schemas import DocumentChunk, SourceType
-from app.utils.dates import parse_date
+from app.utils.dates import now_utc, parse_date
 
 logger = logging.getLogger(__name__)
 FAILOVER_NEWS_FEEDS = [
@@ -26,16 +26,22 @@ except Exception:  # noqa: BLE001
 
 
 class NewsIngestor(BaseIngestor):
-    def __init__(self, rate_limit_seconds: float = 0.8, max_retries: int = 3) -> None:
+    def __init__(self, rate_limit_seconds: float = 4.0, max_retries: int = 3) -> None:
         self.rate_limit_seconds = rate_limit_seconds
         self.max_retries = max_retries
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "bist-agentic-rag/1.0"})
+        self.session.headers.update({"User-Agent": "BIST-Agentic-RAG/2.0 (Academic Research Use)"})
         self.policy = LegalSafeCrawlerPolicy()
+        self.last_policy_summary: dict[str, int | bool] = {
+            "policy_applied": True,
+            "blocked_count": 0,
+            "retry_count": 0,
+        }
 
     def _fetch(self, url: str) -> str:
         decision = self.policy.decide(url)
         if not decision.allowed:
+            self.last_policy_summary["blocked_count"] = int(self.last_policy_summary["blocked_count"]) + 1
             raise RuntimeError(f"Blocked by crawling policy: {decision.reason} ({url})")
 
         last_exc: Exception | None = None
@@ -48,6 +54,7 @@ class NewsIngestor(BaseIngestor):
             except Exception as exc:  # noqa: BLE001
                 last_exc = exc
                 logger.warning("News fetch failed (%s/%s) %s", attempt, self.max_retries, url)
+                self.last_policy_summary["retry_count"] = int(self.last_policy_summary["retry_count"]) + 1
                 time.sleep((self.rate_limit_seconds * attempt) + (0.5 * attempt))
         if last_exc:
             raise last_exc
@@ -74,7 +81,8 @@ class NewsIngestor(BaseIngestor):
             text=text or title,
             date=parse_date(date_str),
             published_at=parse_date(date_str),
-            retrieved_at=datetime.utcnow().isoformat(),
+            retrieved_at=now_utc().isoformat(),
+            notification_type="General Assembly",
             language="tr",
             confidence=0.75,
         )
@@ -108,7 +116,8 @@ class NewsIngestor(BaseIngestor):
                 text=summary or entry.get("title", ""),
                 date=published,
                 published_at=published,
-                retrieved_at=datetime.utcnow().isoformat(),
+                retrieved_at=now_utc().isoformat(),
+                notification_type="General Assembly",
                 language="tr",
                 confidence=0.7,
             )
@@ -122,7 +131,10 @@ class NewsIngestor(BaseIngestor):
         source_urls: list[str],
         date_from: datetime | None = None,
         date_to: datetime | None = None,
+        notification_types: list[str] | None = None,
     ) -> list[DocumentChunk]:
+        _ = notification_types
+        self.last_policy_summary = {"policy_applied": True, "blocked_count": 0, "retry_count": 0}
         all_chunks: list[DocumentChunk] = []
         failed_count = 0
         for src in source_urls:

@@ -9,6 +9,7 @@ import numpy as np
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+_logged_provider_failures: set[str] = set()
 
 
 def _seed_from_text(text: str) -> int:
@@ -110,14 +111,14 @@ def _embed_nomic(text: str) -> list[float]:
 
 def embed_text_with_provider(text: str, provider_override: str | None = None) -> tuple[list[float], str]:
     settings = get_settings()
-    dim = settings.milvus_dim
+    dim = settings.vector_dim or settings.milvus_dim
     provider = (provider_override or settings.embedding_provider).lower()
 
     order: list[str]
     if provider in {"openai", "voyage", "ollama", "nomic", "local"}:
         order = [provider]
     else:
-        order = ["ollama", "openai", "voyage", "nomic", "local"]
+        order = ["voyage", "openai", "ollama", "nomic", "local"]
 
     for candidate in order + ["local"]:
         try:
@@ -133,7 +134,10 @@ def embed_text_with_provider(text: str, provider_override: str | None = None) ->
                 vector = _local_fallback_embedding(text, dim)
             return _normalize_dim(vector, dim), candidate
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Embedding provider failed (%s): %s", candidate, exc)
+            signature = f"{candidate}:{type(exc).__name__}:{str(exc)}"
+            if signature not in _logged_provider_failures:
+                logger.warning("Embedding provider failed (%s): %s", candidate, exc)
+                _logged_provider_failures.add(signature)
             continue
 
     return _local_fallback_embedding(text, dim), "local"
@@ -142,4 +146,3 @@ def embed_text_with_provider(text: str, provider_override: str | None = None) ->
 def embed_text(text: str, provider_override: str | None = None) -> list[float]:
     vector, _ = embed_text_with_provider(text, provider_override=provider_override)
     return vector
-

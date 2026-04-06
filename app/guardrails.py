@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 
 from app.config import get_settings
+from app.guardrails_claims import claim_level_coverage_score
 
 
 INVESTMENT_ADVICE_PATTERNS = [
@@ -12,11 +14,12 @@ INVESTMENT_ADVICE_PATTERNS = [
     r"\bsell\b",
     r"hedef fiyat",
     r"price target",
-    r"kaç olur",
-    r"yükselir mi",
-    r"düşer mi",
+    r"kac olur",
+    r"yukselir mi",
+    r"duser mi",
     r"return prediction",
     r"getiri tahmini",
+    r"fiyat tahmini",
 ]
 
 
@@ -28,8 +31,14 @@ class PolicyDecision:
     refusal_en: str = ""
 
 
+def _normalize_query(text: str) -> str:
+    lowered = text.lower()
+    normalized = unicodedata.normalize("NFKD", lowered)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
 def pre_answer_policy(question: str) -> PolicyDecision:
-    text = question.lower()
+    text = _normalize_query(question)
     blocked = any(re.search(pattern, text) for pattern in INVESTMENT_ADVICE_PATTERNS)
     if blocked:
         return PolicyDecision(
@@ -58,29 +67,18 @@ def has_disclaimer(text: str) -> bool:
     return get_settings().disclaimer in text
 
 
-def _split_sentences(text: str) -> list[str]:
-    return [sentence.strip() for sentence in re.split(r"[.!?]+", text) if sentence.strip()]
+def citation_coverage_score(answer_text: str, citations: list[object]) -> float:
+    score, _ = claim_level_coverage_score(answer_text, citations)
+    return score
 
 
-def citation_coverage_score(answer_text: str, citations_count: int) -> float:
-    sentences = _split_sentences(answer_text)
-    if not sentences:
-        return 0.0
-    if citations_count == 0:
-        return 0.0
-    # Approximate sentence-level evidence: more citations imply better coverage.
-    covered = min(len(sentences), citations_count)
-    return round(covered / len(sentences), 4)
-
-
-def post_answer_policy(answer_text: str, citations_count: int) -> tuple[bool, list[str], float]:
+def post_answer_policy(answer_text: str, citations: list[object]) -> tuple[bool, list[str], float]:
     gaps: list[str] = []
-    coverage = citation_coverage_score(answer_text, citations_count)
-    if citations_count == 0:
-        gaps.append("No citations found for generated answer.")
+    coverage, claim_gaps = claim_level_coverage_score(answer_text, citations)
+    gaps.extend(claim_gaps)
+
     if coverage < 0.5:
-        gaps.append("Low sentence-level citation coverage.")
+        gaps.append("Low claim-level citation coverage.")
     if not has_disclaimer(answer_text):
         gaps.append("Missing mandatory disclaimer.")
-    return len(gaps) == 0, gaps, coverage
-
+    return len(gaps) == 0, list(dict.fromkeys(gaps)), coverage

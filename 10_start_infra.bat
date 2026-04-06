@@ -15,19 +15,19 @@ if errorlevel 1 (
 )
 
 echo [10_start_infra] Starting infrastructure services...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath docker -ArgumentList @('compose','up','-d','redis','etcd','minio','milvus') -PassThru -WindowStyle Hidden; if(-not $p.WaitForExit(600000)){ try { $p.Kill() } catch {}; exit 1 }; exit $p.ExitCode"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath docker -ArgumentList @('compose','up','-d','redis','weaviate') -PassThru -WindowStyle Hidden; if(-not $p.WaitForExit(600000)){ try { $p.Kill() } catch {}; exit 1 }; exit $p.ExitCode"
 if errorlevel 1 exit /b 1
 
-echo [10_start_infra] Waiting for Milvus health endpoint...
+echo [10_start_infra] Waiting for Weaviate health endpoint...
 set /a MAX_RETRY=120
 set /a RETRY=0
 
 :wait_loop
 set /a RETRY+=1
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $c = New-Object Net.Sockets.TcpClient('localhost',19530); $c.Close(); exit 0 } catch { exit 1 }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { (Invoke-WebRequest -UseBasicParsing -Uri 'http://localhost:8080/v1/.well-known/ready' -TimeoutSec 5) | Out-Null; exit 0 } catch { exit 1 }"
 if not errorlevel 1 goto ready
 if %RETRY% GEQ %MAX_RETRY% (
-  echo [10_start_infra] Milvus not ready after retries.
+  echo [10_start_infra] Weaviate not ready after retries.
   exit /b 1
 )
 timeout /t 2 /nobreak >nul

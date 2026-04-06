@@ -3,8 +3,14 @@
 - Artifacts OK: `True`
 - Git Branch: `codex/bist-agentic-rag-release-ready`
 - Git Remote Configured: `False`
-- Uncommitted Items: `0`
-- Latest Release Zip: `D:\rag projesi\releases\bist_agentic_rag_release_20260404_192312.zip`
+- Uncommitted Items: `83`
+- Latest Release Zip: `D:\rag projesi\releases\bist_agentic_rag_release_20260406_190842.zip`
+
+## Gate Status
+- citation_coverage_gte_0_95: **PASS**
+- disclaimer_presence_eq_1_0: **PASS**
+- contradiction_accuracy_gte_0_75: **PASS**
+- hard_gate_pass_rate_gte_0_95: **PASS**
 
 ## Next Step
 - Configure remote and push:

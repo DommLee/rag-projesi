@@ -16,7 +16,7 @@ from app.service import BISTAgentService
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run evaluation suite")
-    parser.add_argument("--mode", default="hybrid")
+    parser.add_argument("--mode", default="heuristic")
     parser.add_argument("--provider", default="auto")
     parser.add_argument("--sample-size", type=int, default=15)
     parser.add_argument("--dataset-path", default="datasets/eval_questions.json")

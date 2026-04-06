@@ -35,6 +35,9 @@ def main() -> int:
         root / "docker-compose.yml",
         root / "docs" / "latest_run_summary.md",
         root / "logs" / "eval_report.json",
+        root / "docs" / "architecture.mmd",
+        root / "docs" / "tradeoff_matrix.md",
+        root / "docs" / "rubric_mapping.md",
     ]
     artifacts_ok = all(path.exists() for path in critical_files)
     missing = [str(path.relative_to(root)) for path in critical_files if not path.exists()]
@@ -60,6 +63,14 @@ def main() -> int:
 
     rc_status, status_out = run_git(["status", "--short"], root)
     dirty_count = len([line for line in status_out.splitlines() if line.strip()]) if rc_status == 0 else -1
+    gate_status = {}
+    eval_path = root / "logs" / "eval_report.json"
+    if eval_path.exists():
+        try:
+            report = json.loads(eval_path.read_text(encoding="utf-8"))
+            gate_status = report.get("gate_results", {})
+        except Exception:
+            gate_status = {}
 
     status_obj = {
         "artifacts_ok": artifacts_ok,
@@ -68,6 +79,7 @@ def main() -> int:
         "git_branch": branch,
         "git_remote_configured": has_remote,
         "git_uncommitted_items": dirty_count,
+        "gate_status": gate_status,
     }
 
     lines = [
@@ -79,6 +91,10 @@ def main() -> int:
         f"- Uncommitted Items: `{dirty_count}`",
         f"- Latest Release Zip: `{status_obj['latest_release_zip'] or 'N/A'}`",
     ]
+    if gate_status:
+        lines.extend(["", "## Gate Status"])
+        for key, value in gate_status.items():
+            lines.append(f"- {key}: **{'PASS' if value else 'FAIL'}**")
     if missing:
         lines.extend(["", "## Missing Critical Files"])
         for item in missing:

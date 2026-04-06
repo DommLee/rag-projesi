@@ -8,7 +8,7 @@ from typing import Any
 from app.config import get_settings
 from app.retrieval.rerank import rerank_with_time_decay
 from app.schemas import DocumentChunk, SourceType
-from app.vectorstore.milvus_store import VectorStore
+from app.vectorstore.types import VectorStore
 
 
 class Retriever:
@@ -25,7 +25,7 @@ class Retriever:
     ) -> str:
         parts = [f'ticker="{ticker.upper()}"']
         if source_types:
-            parts.append("source_type in [" + ",".join([s.value for s in source_types]) + "]")
+            parts.append("source_type in [" + ",".join([f'"{s.value}"' for s in source_types]) + "]")
         if as_of_date:
             parts.append(f"date <= {as_of_date.isoformat()}")
         return " AND ".join(parts)
@@ -48,6 +48,13 @@ class Retriever:
             "ts": datetime.now(UTC).isoformat(),
         }
 
+        trace["steps"].append(
+            {
+                "name": "metadata_first_filter",
+                "duration_ms": 0.0,
+                "items": 0,
+            }
+        )
         start_search = time.perf_counter()
         docs = self.store.search(
             query=query,
@@ -58,7 +65,7 @@ class Retriever:
         )
         trace["steps"].append(
             {
-                "name": "vector_search",
+                "name": "hybrid_vector_search",
                 "duration_ms": round((time.perf_counter() - start_search) * 1000, 2),
                 "items": len(docs),
             }
@@ -89,4 +96,3 @@ class Retriever:
 
     def latest_trace(self) -> dict[str, Any]:
         return self.trace_history[-1] if self.trace_history else {}
-

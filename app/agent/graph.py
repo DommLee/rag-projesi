@@ -25,6 +25,18 @@ class AgentGraph:
         self.nodes = AgentNodes(retriever=retriever, llm=llm, claim_ledger=claim_ledger)
         self._compiled = self._compile()
 
+    @staticmethod
+    def _route_after_intent(state: AgentState) -> str:
+        if state.get("risk_blocked"):
+            return "composer"
+        return "source_planner"
+
+    @staticmethod
+    def _route_after_verifier(state: AgentState) -> str:
+        if state.get("should_reretrieve"):
+            return "reretriever"
+        return "composer"
+
     def _compile(self):
         if StateGraph is None:
             logger.warning("LangGraph not available. Falling back to sequential flow.")
@@ -39,26 +51,36 @@ class AgentGraph:
         graph.add_node("composer", self.nodes.composer)
 
         graph.add_edge(START, "intent_router")
-        graph.add_edge("intent_router", "source_planner")
+        graph.add_conditional_edges(
+            "intent_router",
+            self._route_after_intent,
+            {"composer": "composer", "source_planner": "source_planner"},
+        )
         graph.add_edge("source_planner", "retriever_pass1")
         graph.add_edge("retriever_pass1", "verifier")
-        graph.add_edge("verifier", "reretriever")
+        graph.add_conditional_edges(
+            "verifier",
+            self._route_after_verifier,
+            {"composer": "composer", "reretriever": "reretriever"},
+        )
         graph.add_edge("reretriever", "counterfactual_probe")
         graph.add_edge("counterfactual_probe", "composer")
         graph.add_edge("composer", END)
         return graph.compile()
 
     def _run_sequential(self, state: AgentState) -> AgentState:
-        for step in [
-            self.nodes.intent_router,
-            self.nodes.source_planner,
-            self.nodes.retriever_pass1,
-            self.nodes.verifier,
-            self.nodes.reretriever,
-            self.nodes.counterfactual_probe,
-            self.nodes.composer,
-        ]:
-            state.update(step(state))
+        state.update(self.nodes.intent_router(state))
+        if state.get("risk_blocked"):
+            state.update(self.nodes.composer(state))
+            return state
+
+        state.update(self.nodes.source_planner(state))
+        state.update(self.nodes.retriever_pass1(state))
+        state.update(self.nodes.verifier(state))
+        if state.get("should_reretrieve"):
+            state.update(self.nodes.reretriever(state))
+            state.update(self.nodes.counterfactual_probe(state))
+        state.update(self.nodes.composer(state))
         return state
 
     def run(self, state: AgentState) -> QueryResponse:
@@ -66,6 +88,13 @@ class AgentGraph:
             out = self._compiled.invoke(state)
         else:
             out = self._run_sequential(state)
+
+        if out.get("consistency_assessment") == "blocked_policy":
+            route_path = "blocked"
+        elif out.get("should_reretrieve"):
+            route_path = "reretrieve"
+        else:
+            route_path = "direct"
 
         return QueryResponse(
             answer_tr=out.get("answer_tr", ""),
@@ -80,4 +109,5 @@ class AgentGraph:
             evidence_gaps=out.get("evidence_gaps", []),
             used_sources=list({c.source_type for c in out.get("citations", [])}),
             provider_used=out.get("provider_used", "unknown"),
+            route_path=route_path,
         )

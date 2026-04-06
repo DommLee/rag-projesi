@@ -12,9 +12,11 @@ class AgentState(TypedDict, total=False):
     as_of_date: datetime | None
     language: str
     provider_pref: str | None
+    provider_overrides: dict[str, str] | None
     session_id: str
 
     risk_blocked: bool
+    skip_to_composer: bool
     question_type: str
     source_plan: list[SourceType]
     source_weights: dict[str, float]
@@ -25,6 +27,7 @@ class AgentState(TypedDict, total=False):
 
     evidence_coverage: float
     contradiction_confidence: float
+    should_reretrieve: bool
     consistency_assessment: str
 
     citations: list[Citation]

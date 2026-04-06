@@ -1,15 +1,12 @@
 # Trade-off Matrix
 
-| Layer | Option | Strength | Weakness | Current Default |
-|---|---|---|---|---|
-| LLM | Ollama | Local, low cost | Variable quality by model | Primary |
-| LLM | OpenAI | Strong Turkish/English quality | API cost | Optional real eval |
-| LLM | Together | Fast prototyping | Third-party dependency | Fallback |
-| Embedding | Local deterministic | Zero external dependency | Semantic quality low | Dev fallback |
-| Embedding | OpenAI/Voyage/Nomic/Ollama | Better semantic retrieval | Key/model management | Configurable |
-| Vector DB | Milvus | Production-grade scale | Infra complexity | Preferred |
-| Vector DB | InMemory fallback | Fast local continuity | Non-persistent | Disabled in strict mode |
-| Evaluation | Mock | Cheap/fast | Not academically strong | Baseline |
-| Evaluation | Hybrid | Better realism-cost balance | Requires careful reporting | Recommended |
-| Evaluation | Real | Best realism | Cost and latency | Final gate optional |
-
+| Layer | Options Considered | Decision | Rationale |
+|---|---|---|---|
+| LLM Runtime | Ollama, OpenAI, Together | Ollama primary, provider fallback active | Local-first cost and latency control, fallback resilience for outages |
+| Evaluation | Real judge, hybrid judge, heuristic-only | Heuristic-only default | Assignment demo reliability without API-key dependency; report marks model-judge as not-run |
+| Retrieval | Vector-only, metadata-only, hybrid | Metadata-first + vector + time-decay | Improves ticker/date precision while keeping semantic recall |
+| Agent Routing | Fixed linear graph, conditional graph | Conditional graph | Skips unnecessary re-retrieval when evidence is already sufficient |
+| Guardrails | Citation count heuristic, claim-level grounding | Claim-level grounding | Stronger evidence enforcement for declarative statements |
+| Vector Store | Weaviate strict, Weaviate with fallback | Weaviate with configurable strict mode | Metadata-first filtering + hybrid retrieval + local dev continuity |
+| Ingestion | Full reingest, delta registry | Delta/idempotent registry | Prevents duplicate growth and improves repeatability |
+| Desktop Delivery | BAT only, GUI only, EXE onedir | GUI + EXE onedir | Better classroom demo UX with manageable packaging reliability |

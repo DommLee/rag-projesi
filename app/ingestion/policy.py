@@ -22,8 +22,14 @@ class LegalSafeCrawlerPolicy:
         self.settings = get_settings()
         self._last_request_by_domain: dict[str, float] = defaultdict(float)
         self._robots_cache: dict[str, urllib.robotparser.RobotFileParser] = {}
+        self._robots_status: dict[str, str] = {}
         self._session = requests.Session()
         self._session.headers.update({"User-Agent": self.settings.crawler_user_agent})
+        self._safe_domains = {
+            part.strip().lower()
+            for part in self.settings.crawler_safe_domains_csv.split(",")
+            if part.strip()
+        }
 
     @staticmethod
     def _domain(url: str) -> str:
@@ -36,12 +42,18 @@ class LegalSafeCrawlerPolicy:
         parser = urllib.robotparser.RobotFileParser()
         robots_url = f"https://{domain}/robots.txt"
         try:
-            parser.set_url(robots_url)
-            parser.read()
-        except Exception:  # noqa: BLE001
-            # If robots cannot be fetched, allow but keep reason visible.
+            response = self._session.get(robots_url, timeout=self.settings.crawler_robots_timeout_seconds)
+            response.raise_for_status()
+            parser.parse(response.text.splitlines())
+            self._robots_status[domain] = "loaded"
+        except Exception:
             parser = urllib.robotparser.RobotFileParser()
-            parser.parse(["User-agent: *", "Allow: /"])
+            if self.settings.crawler_fail_open or domain in self._safe_domains:
+                parser.parse(["User-agent: *", "Allow: /"])
+                self._robots_status[domain] = "unreachable_fallback_allow"
+            else:
+                parser.parse(["User-agent: *", "Disallow: /"])
+                self._robots_status[domain] = "unreachable_fail_closed"
         self._robots_cache[domain] = parser
         return parser
 
@@ -51,7 +63,8 @@ class LegalSafeCrawlerPolicy:
         allowed = parser.can_fetch(self.settings.crawler_user_agent, url)
         if not allowed:
             return CrawlDecision(allowed=False, reason=f"robots_disallow:{domain}")
-        return CrawlDecision(allowed=True, reason="allowed")
+        robots_state = self._robots_status.get(domain, "unknown")
+        return CrawlDecision(allowed=True, reason=f"allowed:{robots_state}")
 
     def wait_rate_limit(self, url: str, custom_seconds: float | None = None) -> None:
         domain = self._domain(url)
@@ -60,4 +73,3 @@ class LegalSafeCrawlerPolicy:
         if elapsed < min_wait:
             time.sleep(min_wait - elapsed)
         self._last_request_by_domain[domain] = time.time()
-

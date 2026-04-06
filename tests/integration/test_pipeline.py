@@ -31,7 +31,7 @@ def test_retrieve_verify_reretrieve_answer_flow() -> None:
         [
             _chunk("ASELS", SourceType.KAP, "KAP says revenue increased and board approved project.", 2, "1"),
             _chunk("ASELS", SourceType.NEWS, "News reports project delays and weak outlook.", 1, "2"),
-            _chunk("ASELS", SourceType.BROKER_REPORT, "Broker notes mixed signals on backlog.", 3, "3"),
+            _chunk("ASELS", SourceType.BROKERAGE, "Broker notes mixed signals on backlog.", 3, "3"),
         ]
     )
     retriever = Retriever(store)
@@ -54,4 +54,4 @@ def test_retrieve_verify_reretrieve_answer_flow() -> None:
         "inconclusive",
         "insufficient_evidence",
     }
-    assert response.provider_used in {"mock", "ollama", "openai", "together", "policy", "unknown"}
+    assert response.provider_used in {"mock", "ollama", "openai", "together", "groq", "gemini", "policy", "unknown"}

@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import re
+import unicodedata
 from datetime import UTC, datetime
 from typing import Any
 
 from app.agent.state import AgentState
 from app.config import get_settings
 from app.guardrails import append_disclaimer, post_answer_policy, pre_answer_policy
+from app.guardrails_claims import decompose_claims, ground_claims
 from app.memory.claim_ledger import ClaimLedger
 from app.models.providers import RoutedLLM
 from app.retrieval.retriever import Retriever
@@ -26,37 +28,51 @@ class AgentNodes:
         self.settings = get_settings()
 
     @staticmethod
+    def _normalize_question(text: str) -> str:
+        lowered = text.lower()
+        normalized = unicodedata.normalize("NFKD", lowered)
+        ascii_safe = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+        return (
+            ascii_safe.replace("ı", "i")
+            .replace("ğ", "g")
+            .replace("ş", "s")
+            .replace("ç", "c")
+            .replace("ö", "o")
+            .replace("ü", "u")
+        )
+
+    @staticmethod
     def _question_type(question: str) -> str:
-        q = question.lower()
+        q = AgentNodes._normalize_question(question)
         if "kap" in q and ("6 ay" in q or "last 6 months" in q):
             return "kap_disclosure_types"
-        if "broker" in q or "aracı kurum" in q or "report" in q:
+        if "broker" in q or "araci kurum" in q or "report" in q:
             return "brokerage_narrative"
-        if "çeliş" in q or "contradict" in q or "align" in q or "tutarlı" in q:
+        if "celis" in q or "contradict" in q or "align" in q or "tutarli" in q:
             return "consistency_check"
-        if "zaman" in q or "evolution" in q or "değiş" in q:
+        if "zaman" in q or "evolution" in q or "degis" in q:
             return "narrative_evolution"
         return "general_market_intel"
 
     @staticmethod
     def _sources_for_question_type(question_type: str) -> tuple[list[SourceType], dict[str, float]]:
         if question_type == "kap_disclosure_types":
-            return [SourceType.KAP], {"kap": 0.9, "news": 0.05, "broker_report": 0.05}
+            return [SourceType.KAP], {"kap": 0.9, "news": 0.05, "brokerage": 0.05}
         if question_type == "brokerage_narrative":
-            return [SourceType.BROKER_REPORT, SourceType.NEWS], {"kap": 0.1, "news": 0.35, "broker_report": 0.55}
+            return [SourceType.BROKERAGE, SourceType.NEWS], {"kap": 0.1, "news": 0.35, "brokerage": 0.55}
         if question_type == "consistency_check":
-            return [SourceType.KAP, SourceType.NEWS, SourceType.BROKER_REPORT], {
+            return [SourceType.KAP, SourceType.NEWS, SourceType.BROKERAGE], {
                 "kap": 0.5,
                 "news": 0.35,
-                "broker_report": 0.15,
+                "brokerage": 0.15,
             }
         if question_type == "narrative_evolution":
-            return [SourceType.KAP, SourceType.NEWS, SourceType.BROKER_REPORT], {
+            return [SourceType.KAP, SourceType.NEWS, SourceType.BROKERAGE], {
                 "kap": 0.45,
                 "news": 0.4,
-                "broker_report": 0.15,
+                "brokerage": 0.15,
             }
-        return [SourceType.KAP, SourceType.NEWS], {"kap": 0.55, "news": 0.45, "broker_report": 0.0}
+        return [SourceType.KAP, SourceType.NEWS], {"kap": 0.55, "news": 0.45, "brokerage": 0.0}
 
     @staticmethod
     def _build_citations(chunks: list[DocumentChunk], limit: int = 8) -> list[Citation]:
@@ -72,7 +88,7 @@ class AgentNodes:
                     source_type=chunk.source_type,
                     title=chunk.title or f"{chunk.source_type.value} document",
                     institution=chunk.institution,
-                    date=chunk.date,
+                    date=chunk.publication_date or chunk.date,
                     url=chunk.url,
                     snippet=chunk.content[:220],
                 )
@@ -103,7 +119,13 @@ class AgentNodes:
                 seen.add(chunk.chunk_id)
         return deduped
 
-    def _llm_contradiction_score(self, question: str, docs: list[DocumentChunk], provider_pref: str | None) -> float:
+    def _llm_contradiction_score(
+        self,
+        question: str,
+        docs: list[DocumentChunk],
+        provider_pref: str | None,
+        provider_overrides: dict[str, str] | None = None,
+    ) -> float:
         if not docs:
             return 0.0
         snippets = []
@@ -116,7 +138,11 @@ Evidence snippets:
 {chr(10).join(snippets)}
 """
         try:
-            raw, _ = self.llm.generate_with_provider(prompt, provider_pref=provider_pref)
+            raw, _ = self.llm.generate_with_provider(
+                prompt,
+                provider_pref=provider_pref,
+                provider_overrides=provider_overrides,
+            )
             parsed = self._parse_model_json(raw)
             return max(0.0, min(1.0, float(parsed.get("contradiction_score", 0.0))))
         except Exception:  # noqa: BLE001
@@ -130,6 +156,7 @@ Evidence snippets:
             "question_type": self._question_type(state["question"]),
             "refusal_tr": policy.refusal_tr,
             "refusal_en": policy.refusal_en,
+            "skip_to_composer": not policy.allowed,
         }
 
     def source_planner(self, state: AgentState) -> AgentState:
@@ -167,6 +194,7 @@ Evidence snippets:
             question=state["question"],
             docs=docs,
             provider_pref=state.get("provider_pref"),
+            provider_overrides=state.get("provider_overrides"),
         )
         tension = round((rule_tension * 0.65) + (llm_tension * 0.35), 4)
         if tension >= 0.54:
@@ -175,24 +203,20 @@ Evidence snippets:
             consistency = "aligned"
         else:
             consistency = "inconclusive"
+
+        should_reretrieve = coverage < 0.7 or (0.4 <= tension <= 0.6)
         return {
             "evidence_coverage": round(coverage, 4),
             "contradiction_confidence": tension,
             "consistency_assessment": consistency,
+            "should_reretrieve": should_reretrieve,
         }
 
     def reretriever(self, state: AgentState) -> AgentState:
-        needs_second_pass = (
-            state.get("evidence_coverage", 0.0) < 0.7
-            or 0.4 <= state.get("contradiction_confidence", 0.0) <= 0.6
-        )
-        if not needs_second_pass:
-            return {"pass2_docs": []}
-
         docs = self.retriever.retrieve(
             query=f"{state['question']} resmi açıklama medya karşılaştırması",
             ticker=state["ticker"],
-            source_types=[SourceType.KAP, SourceType.NEWS, SourceType.BROKER_REPORT],
+            source_types=[SourceType.KAP, SourceType.NEWS, SourceType.BROKERAGE],
             as_of_date=state.get("as_of_date"),
             top_k=self.settings.max_top_k + 4,
         )
@@ -200,7 +224,7 @@ Evidence snippets:
 
     def counterfactual_probe(self, state: AgentState) -> AgentState:
         planned = set(state.get("source_plan") or [])
-        opposing = [s for s in [SourceType.KAP, SourceType.NEWS, SourceType.BROKER_REPORT] if s not in planned]
+        opposing = [s for s in [SourceType.KAP, SourceType.NEWS, SourceType.BROKERAGE] if s not in planned]
         if not opposing:
             opposing = [SourceType.NEWS, SourceType.KAP]
         docs = self.retriever.retrieve(
@@ -253,7 +277,11 @@ Rules:
 - Return strict JSON keys: answer_tr, answer_en, consistency_assessment, confidence.
 - Answers must be time-aware and evidence-based.
 """
-        llm_raw, provider_used = self.llm.generate_with_provider(prompt, provider_pref=state.get("provider_pref"))
+        llm_raw, provider_used = self.llm.generate_with_provider(
+            prompt,
+            provider_pref=state.get("provider_pref"),
+            provider_overrides=state.get("provider_overrides"),
+        )
         parsed = self._parse_model_json(llm_raw)
 
         answer_tr = parsed.get("answer_tr") or (
@@ -282,17 +310,33 @@ Rules:
         answer_tr = append_disclaimer(answer_tr)
         answer_en = append_disclaimer(answer_en)
 
-        ok_tr, gaps_tr, score_tr = post_answer_policy(answer_tr, len(citations))
-        ok_en, gaps_en, score_en = post_answer_policy(answer_en, len(citations))
+        ok_tr, gaps_tr, score_tr = post_answer_policy(answer_tr, citations)
+        ok_en, gaps_en, score_en = post_answer_policy(answer_en, citations)
         score = round((score_tr + score_en) / 2, 4)
         gaps = list(dict.fromkeys(gaps_tr + gaps_en))
 
-        if not ok_tr or not ok_en:
-            consistency = "insufficient_evidence"
-            confidence = min(confidence, 0.45)
+        tr_claims = decompose_claims(answer_tr)
+        tr_grounding = ground_claims(tr_claims, citations)
+        if tr_grounding.ungrounded_claims:
+            gaps.extend([f"Ungrounded claim (TR): {claim}" for claim in tr_grounding.ungrounded_claims[:3]])
 
-        for sentence in [s.strip() for s in re.split(r"[.!?]+", answer_tr) if s.strip()]:
-            self.claim_ledger.register(sentence, supported=len(citations) > 0)
+        en_claims = decompose_claims(answer_en)
+        en_grounding = ground_claims(en_claims, citations)
+        if en_grounding.ungrounded_claims:
+            gaps.extend([f"Ungrounded claim (EN): {claim}" for claim in en_grounding.ungrounded_claims[:3]])
+
+        if not ok_tr or not ok_en or tr_grounding.ungrounded_claims or en_grounding.ungrounded_claims:
+            if provider_used == "mock":
+                confidence = min(confidence, 0.55)
+            else:
+                consistency = "insufficient_evidence"
+                confidence = min(confidence, 0.45)
+
+        for claim in tr_claims:
+            if not claim.declarative:
+                continue
+            supported = claim.sentence_index in tr_grounding.matched_claim_to_citation_idx
+            self.claim_ledger.register(claim.text, supported=supported)
 
         return {
             "answer_tr": answer_tr,
@@ -300,7 +344,7 @@ Rules:
             "citations": citations,
             "confidence": max(0.0, min(1.0, confidence)),
             "consistency_assessment": consistency,
-            "evidence_gaps": gaps,
+            "evidence_gaps": list(dict.fromkeys(gaps)),
             "citation_coverage_score": score,
             "provider_used": provider_used,
         }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import UTC
 from typing import Any
@@ -11,13 +12,14 @@ from app.schemas import DocumentChunk, SourceType
 
 
 CONTRADICTION_CUES = {
-    "olumlu": {"artis", "guclu", "iyilesme", "onay"},
-    "olumsuz": {"azalis", "zayif", "iptal", "ceza", "reddedildi"},
+    "olumlu": {"artış", "güçlü", "iyileşme", "onay"},
+    "olumsuz": {"azalış", "zayıf", "iptal", "ceza", "reddedildi"},
 }
 
 
 def _normalize_token(token: str) -> str:
-    return "".join(ch.lower() for ch in token if ch.isalnum())
+    normalized = unicodedata.normalize("NFC", token.strip().lower())
+    return "".join(ch for ch in normalized if ch.isalnum())
 
 
 def _tokenize(text: str) -> list[str]:
@@ -70,7 +72,7 @@ def disclosure_news_tension_index(chunks: list[DocumentChunk]) -> dict[str, Any]
 def broker_bias_lens(chunks: list[DocumentChunk], top_terms: int = 8) -> dict[str, Any]:
     by_institution: dict[str, Counter] = defaultdict(Counter)
     for chunk in chunks:
-        if chunk.source_type != SourceType.BROKER_REPORT:
+        if chunk.source_type != SourceType.BROKERAGE:
             continue
         by_institution[chunk.institution].update(_tokenize(chunk.content))
 

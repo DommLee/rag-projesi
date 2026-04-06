@@ -27,8 +27,8 @@ echo [30_run_api] Checking Docker daemon...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath docker -ArgumentList @('ps','--format','{{.ID}}') -PassThru -WindowStyle Hidden; if(-not $p.WaitForExit(20000)){ try { $p.Kill() } catch {}; exit 1 }; exit $p.ExitCode"
 if errorlevel 1 goto local_fallback
 
-echo [30_run_api] Starting API and worker containers...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath docker -ArgumentList @('compose','up','-d','api','worker') -PassThru -WindowStyle Hidden; if(-not $p.WaitForExit(600000)){ try { $p.Kill() } catch {}; exit 1 }; exit $p.ExitCode"
+echo [30_run_api] Starting API and worker containers (build enabled)...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath docker -ArgumentList @('compose','up','-d','--build','api','worker') -PassThru -WindowStyle Hidden; if(-not $p.WaitForExit(1200000)){ try { $p.Kill() } catch {}; exit 1 }; exit $p.ExitCode"
 if errorlevel 1 exit /b 1
 
 echo [30_run_api] API should be available at http://localhost:%API_HOST_PORT%

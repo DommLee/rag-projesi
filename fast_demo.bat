@@ -2,6 +2,8 @@
 setlocal
 set ROOT=%~dp0
 cd /d "%ROOT%"
+if "%ALLOW_LOCAL_FALLBACK%"=="" set ALLOW_LOCAL_FALLBACK=1
+if "%SKIP_OLLAMA_PULL%"=="" set SKIP_OLLAMA_PULL=1
 
 echo [fast_demo] Starting fast demo profile...
 call 00_setup.bat

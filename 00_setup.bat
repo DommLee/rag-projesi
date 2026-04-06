@@ -43,5 +43,21 @@ if errorlevel 1 (
   )
 )
 
+where npm >nul 2>nul
+if errorlevel 1 (
+  echo [WARN] npm not found in PATH. Skipping frontend dependency install.
+) else (
+  if exist "frontend\package.json" (
+    echo [00_setup] Installing frontend dependencies...
+    pushd frontend
+    call npm install
+    if errorlevel 1 (
+      popd
+      exit /b 1
+    )
+    popd
+  )
+)
+
 echo [00_setup] Completed.
 exit /b 0

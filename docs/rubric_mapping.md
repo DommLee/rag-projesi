@@ -1,12 +1,29 @@
 # Rubric Mapping (100 pts)
 
-- Data diversity (20): `used_sources_global / 3` based score
-- Retrieval quality (20): citation coverage score
-- Agentic logic (15): expected vs actual consistency alignment
-- Memory & narrative (10): citation + contradiction composite
-- Ethics & guardrails (15): disclaimer + policy blocking
-- Evaluation report (10): generated JSON + Markdown artifacts
-- Demo & docs (10): dashboard + runbook + demo script completeness
+## Data Diversity (20)
+- Evidence: multi-source retrieval (`kap`, `news`, `brokerage`)
+- Source: `logs/eval_report.json -> heuristic_metrics.data_diversity`
 
-Generated automatically in `/v1/eval/run` output under `rubric_scores`.
+## Retrieval Quality (20)
+- Evidence: claim-level citation coverage
+- Source: `logs/eval_report.json -> citation_coverage`
 
+## Agentic Logic (15)
+- Evidence: conditional routing + contradiction accuracy
+- Source: `logs/eval_report.json -> contradiction_detection_accuracy`, `gate_results`
+
+## Memory & Narrative (10)
+- Evidence: narrative diagnostics + claim ledger + weekly snapshots
+- Source: `/v1/diagnostics/{ticker}` response
+
+## Ethics & Guardrails (15)
+- Evidence: pre-answer policy refusal + mandatory disclaimer + claim grounding fallback
+- Source: `logs/eval_report.json -> disclaimer_presence`, `gate_results`
+
+## Evaluation Report (10)
+- Evidence: heuristic metrics + gate results + rubric breakdown + artifacts
+- Source: `logs/eval_report.json`, `logs/eval_reports/*.md`
+
+## Demo & Docs (10)
+- Evidence: scripted demo flow, latest summary, architecture/tradeoff docs, desktop EXE guide
+- Source: `docs/final_demo_script.md`, `docs/latest_run_summary.md`, `docs/tradeoff_matrix.md`, `releases/desktop/README_EXE.md`

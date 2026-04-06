@@ -10,37 +10,37 @@ def _scenario_texts(expected_consistency: str, ticker: str) -> dict[str, str]:
     if expected_consistency == "contradiction":
         return {
             "kap": (
-                f"{ticker} resmi kap bildirimi: guclu artis iyilesme onay vurgusu, "
+                f"{ticker} resmi KAP bildirimi: güçlü artış, iyileşme ve onay vurgusu; "
                 "operasyonel hedeflerde olumlu çerçeve."
             ),
             "news": (
-                f"{ticker} medya yorumu: azalis zayif iptal ceza reddedildi vurgusu, "
+                f"{ticker} medya yorumu: azalış, zayıf görünüm, iptal ve ceza vurgusu; "
                 "kısa vadede temkinli çerçeve."
             ),
-            "broker": f"{ticker} aracı kurum raporu: riskler artıyor, senaryo ayrışıyor.",
+            "brokerage": f"{ticker} aracı kurum raporu: riskler artıyor, senaryo ayrışıyor.",
         }
     if expected_consistency == "aligned":
         return {
             "kap": (
-                f"{ticker} resmi kap bildirimi: guclu artis iyilesme onay, "
+                f"{ticker} resmi KAP bildirimi: güçlü artış, iyileşme ve onay; "
                 "faaliyetlerde dengeli pozitif görünüm."
             ),
             "news": (
-                f"{ticker} medya özeti: guclu artis iyilesme onay ifadesi, "
+                f"{ticker} medya özeti: güçlü artış, iyileşme, onay ifadesi; "
                 "resmi açıklama ile uyumlu çerçeve."
             ),
-            "broker": f"{ticker} aracı kurum raporu: resmi duyurularla uyumlu ana tema.",
+            "brokerage": f"{ticker} aracı kurum raporu: resmi duyurularla uyumlu ana tema.",
         }
     return {
         "kap": (
-            f"{ticker} kap özeti: guclu artis ile birlikte bazı alanlarda azalis sinyali, "
+            f"{ticker} KAP özeti: güçlü artış ile birlikte bazı alanlarda azalış sinyali; "
             "görünüm karma."
         ),
         "news": (
-            f"{ticker} haber özeti: kısmi artis ve kısmi zayif görünüm, "
+            f"{ticker} haber özeti: kısmi artış ve kısmi zayıf görünüm; "
             "resmi metinle kısmen örtüşen karışık ton."
         ),
-        "broker": f"{ticker} aracı kurum raporu: senaryo dağılımı dengeli, kesin yön sınırlı.",
+        "brokerage": f"{ticker} aracı kurum raporu: senaryo dağılımı dengeli, kesin yön sınırlı.",
     }
 
 
@@ -61,8 +61,10 @@ def build_eval_fixture_chunks(questions: list[dict[str, Any]]) -> list[DocumentC
                     content=f"{texts['kap']} (fixture_{idx + 1})",
                     ticker=ticker,
                     source_type=SourceType.KAP,
+                    publication_date=kap_dt,
                     date=kap_dt,
                     institution="KAP-FIXTURE",
+                    notification_type="Material Event",
                     doc_id=f"{ticker}-kap-{idx + 1}",
                     url=f"https://fixture.local/{ticker}/kap/{idx + 1}",
                     published_at=kap_dt,
@@ -83,8 +85,10 @@ def build_eval_fixture_chunks(questions: list[dict[str, Any]]) -> list[DocumentC
                     content=f"{texts['news']} (fixture_{idx + 1})",
                     ticker=ticker,
                     source_type=SourceType.NEWS,
+                    publication_date=news_dt,
                     date=news_dt,
                     institution="NEWS-FIXTURE",
+                    notification_type="General Assembly",
                     doc_id=f"{ticker}-news-{idx + 1}",
                     url=f"https://fixture.local/{ticker}/news/{idx + 1}",
                     published_at=news_dt,
@@ -100,21 +104,22 @@ def build_eval_fixture_chunks(questions: list[dict[str, Any]]) -> list[DocumentC
         broker_dt = now - timedelta(days=3)
         chunks.append(
             DocumentChunk(
-                content=texts["broker"],
+                content=texts["brokerage"],
                 ticker=ticker,
-                source_type=SourceType.BROKER_REPORT,
+                source_type=SourceType.BROKERAGE,
+                publication_date=broker_dt,
                 date=broker_dt,
                 institution="BROKER-FIXTURE",
-                doc_id=f"{ticker}-broker-1",
-                url=f"https://fixture.local/{ticker}/broker/1",
+                notification_type="Financial Report",
+                doc_id=f"{ticker}-brokerage-1",
+                url=f"https://fixture.local/{ticker}/brokerage/1",
                 published_at=broker_dt,
                 retrieved_at=now,
                 language="tr",
                 confidence=0.9,
-                title=f"{ticker} Broker Fixture 1",
-                chunk_id=f"{ticker}-broker-fixture-1",
+                title=f"{ticker} Brokerage Fixture 1",
+                chunk_id=f"{ticker}-brokerage-fixture-1",
                 metadata={"fixture": True},
             )
         )
     return chunks
-

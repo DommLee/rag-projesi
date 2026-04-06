@@ -8,8 +8,8 @@ flowchart LR
     AG --> RR["Re-retriever"]
     AG --> CMP["Composer + Guardrails"]
 
-    RET --> VS["Milvus / InMemory fallback"]
-    VS --> EMB["Embedding Providers (Ollama/OpenAI/Voyage/Nomic)"]
+    RET --> VS["Weaviate / InMemory fallback"]
+    VS --> EMB["Embedding Providers (Voyage/OpenAI/Ollama/Nomic)"]
 
     INJ["Ingestion Jobs"] --> KAP["KAP HTML"]
     INJ --> NEWS["News RSS/HTML"]
@@ -23,4 +23,3 @@ flowchart LR
     AG --> LED["Claim Ledger"]
     UI --> EVAL["Evaluation Runner (mock/hybrid/real)"]
     EVAL --> REP["Rubric JSON + Markdown report"]
-

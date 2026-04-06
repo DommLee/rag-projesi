@@ -14,5 +14,4 @@ def test_build_eval_fixture_chunks_generates_multisource_docs() -> None:
     assert len(akbnk) >= 5
     assert any(chunk.source_type == SourceType.KAP for chunk in akbnk)
     assert any(chunk.source_type == SourceType.NEWS for chunk in akbnk)
-    assert any(chunk.source_type == SourceType.BROKER_REPORT for chunk in akbnk)
-
+    assert any(chunk.source_type == SourceType.BROKERAGE for chunk in akbnk)

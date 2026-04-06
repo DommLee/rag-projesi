@@ -21,12 +21,14 @@ def test_chunk_metadata_mandatory_fields() -> None:
     for chunk in chunks:
         assert chunk.ticker == "ASELS"
         assert chunk.source_type == SourceType.KAP
+        assert chunk.publication_date is not None
         assert chunk.date is not None
         assert chunk.institution
+        assert chunk.notification_type
         assert chunk.doc_id
         assert chunk.url
         assert chunk.published_at
         assert chunk.retrieved_at
+        assert chunk.ingest_date
         assert chunk.language
         assert 0 <= chunk.confidence <= 1
-

@@ -17,6 +17,16 @@ def test_metrics_endpoint() -> None:
     payload = response.json()
     assert "metrics" in payload
     assert "uptime_seconds" in payload
+    assert "routing_counters" in payload
+
+
+def test_provider_registry_endpoint() -> None:
+    client = TestClient(app)
+    response = client.get("/v1/providers")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "defaults" in payload
+    assert "available" in payload
 
 
 def test_latest_eval_endpoint_exists() -> None:
