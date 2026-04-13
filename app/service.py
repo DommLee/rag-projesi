@@ -215,6 +215,17 @@ class BISTAgentService:
         except Exception as exc:  # noqa: BLE001
             logger.warning("Auto-seed failed (non-fatal): %s", exc)
 
+    # BIST-30 en likit hisseler - warmup rotasyonu icin
+    _WARMUP_TICKERS = [
+        "THYAO", "ASELS", "GARAN", "AKBNK", "EREGL",
+        "SISE", "BIMAS", "KCHOL", "SAHOL", "TUPRS",
+        "TOASO", "TCELL", "YKBNK", "HEKTS", "SASA",
+        "PGSUS", "FROTO", "TAVHL", "ENKAI", "KRDMD",
+        "PETKM", "ARCLK", "KOZAL", "DOHOL", "VESTL",
+        "TTKOM", "EKGYO", "KOZAA", "MGROS", "ODAS",
+    ]
+    _warmup_index = 0
+
     def warm_up_all_sources(self) -> dict:
         """Activate all idle enabled sources by triggering an initial fetch.
 
@@ -222,15 +233,26 @@ class BISTAgentService:
         """
         results: dict[str, str] = {}
         now_iso = datetime.now(UTC).isoformat()
-        sample_ticker = "THYAO"
 
-        # --- KAP Disclosures ---
-        try:
-            req = IngestRequest(ticker=sample_ticker, institution="BIST-Collector")
-            self.ingest_kap(req)
-            results["kap_disclosures"] = "ok"
-        except Exception as exc:  # noqa: BLE001
-            results["kap_disclosures"] = f"error: {exc}"
+        # Her seferinde 3 farkli hisse sec (round-robin)
+        batch_size = 3
+        start = BISTAgentService._warmup_index
+        tickers_this_round = []
+        for i in range(batch_size):
+            idx = (start + i) % len(self._WARMUP_TICKERS)
+            tickers_this_round.append(self._WARMUP_TICKERS[idx])
+        BISTAgentService._warmup_index = (start + batch_size) % len(self._WARMUP_TICKERS)
+
+        logger.info("Warmup round tickers: %s", tickers_this_round)
+
+        # --- KAP Disclosures (for each ticker in rotation) ---
+        for ticker in tickers_this_round:
+            try:
+                req = IngestRequest(ticker=ticker, institution="BIST-Collector")
+                self.ingest_kap(req)
+                results[f"kap_{ticker}"] = "ok"
+            except Exception as exc:  # noqa: BLE001
+                results[f"kap_{ticker}"] = f"error: {exc}"
 
         # --- BIST Universe ---
         try:
@@ -274,8 +296,9 @@ class BISTAgentService:
             "investing_tr_news_rss", "google_news_discovery",
         ]
         try:
-            req = IngestRequest(ticker=sample_ticker, institution="BIST-Collector")
-            self.ingest_news(req)
+            for ticker in tickers_this_round:
+                req = IngestRequest(ticker=ticker, institution="BIST-Collector")
+                self.ingest_news(req)
             for rss_key in rss_keys:
                 entry = next((e for e in self.source_catalog if e.key == rss_key), None)
                 if entry and entry.enabled:
@@ -292,7 +315,8 @@ class BISTAgentService:
 
         # --- Open Web Research ---
         try:
-            snapshot = self._web_research_snapshot(sample_ticker)
+            for ticker in tickers_this_round:
+                snapshot = self._web_research_snapshot(ticker)
             results["web_search_context"] = snapshot.get("status", "ok")
         except Exception as exc:  # noqa: BLE001
             results["web_search_context"] = f"error: {exc}"
