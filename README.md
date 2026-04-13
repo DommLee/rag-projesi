@@ -1,6 +1,9 @@
 # BIST Agentic RAG v2.0 (Final Optimized Blueprint)
 
-🚀 **[Click Here to view the Interactive FinTech Rubric Report & Documentation!](https://dommlee.github.io/rag-projesi/docs/)**
+<div align="center">
+  <h3>🚀 Interactive FinTech Rubric Report & Documentation</h3>
+  <a href="https://dommlee.github.io/rag-projesi/docs/"><b>👉 https://dommlee.github.io/rag-projesi/docs/ 👈</b></a>
+</div>
 
 Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with explicit non-advisory guardrails.
 
