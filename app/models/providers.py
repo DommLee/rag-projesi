@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import logging
@@ -292,6 +292,8 @@ class RoutedLLM:
         if value is None:
             return None
         stripped = value.strip()
+        if key == "ollama_base_url" and ("127.0.0.1" in stripped or "localhost" in stripped):
+            stripped = stripped.replace("127.0.0.1", "host.docker.internal").replace("localhost", "host.docker.internal")
         return stripped or None
 
     def _build_provider(self, name: str, overrides: dict[str, str] | None) -> LLMProvider:
