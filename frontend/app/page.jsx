@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -179,6 +179,22 @@ async function readFileAsBase64(file) {
   return btoa(binary);
 }
 
+class TabErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="mt-6 rounded-2xl border border-rose-800 bg-rose-950/30 p-6 text-sm text-rose-200">
+          <div className="mb-2 text-base font-semibold">Bu sekme yuklenirken hata olustu</div>
+          <pre className="mt-3 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300">{String(this.state.error?.message || this.state.error || "Bilinmeyen hata")}{"\n"}{String(this.state.error?.stack || "").slice(0, 600)}</pre>
+          <button className="mt-4 rounded-lg bg-rose-700 px-4 py-2 text-sm text-white hover:bg-rose-600" onClick={() => this.setState({ hasError: false, error: null })}>Tekrar Dene</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 function Panel({ children, className = "" }) { return <div className={cx("glass-card p-5", className)}>{children}</div>; }
 function SectionTitle({ title, subtext }) {
   return <div className="mb-4"><div className="section-title">{title}</div>{subtext ? <div className="mt-1 text-sm text-slate-400">{subtext}</div> : null}</div>;
@@ -1158,7 +1174,7 @@ export function DashboardApp({ initialTab = "overview" }) {
       ) : null}
 
       {activeTab === "workspace" ? (
-        <div className="mt-6 grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <TabErrorBoundary key="workspace"><div className="mt-6 grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
           <div className="space-y-6">
             <Panel>
               <SectionTitle title="Ticker seçim + otomatik analiz" subtext="Ticker değiştiğinde backend warm-ingest yapar ve gerekirse analizi yeniler." />
@@ -1499,7 +1515,7 @@ export function DashboardApp({ initialTab = "overview" }) {
               </div>
             </Panel>
           </div>
-        </div>
+        </div></TabErrorBoundary>
       ) : null}
       {activeTab === "chat" ? (
         <div className="mt-6 grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
@@ -1644,7 +1660,7 @@ export function DashboardApp({ initialTab = "overview" }) {
         </div>
       ) : null}
       {activeTab === "crossasset" ? (
-        <div className="mt-6 grid gap-6">
+        <TabErrorBoundary key="crossasset"><div className="mt-6 grid gap-6">
           <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
             <Panel>
               <SectionTitle title="Cross-Asset Context" subtext="Kripto ve makro bağlam yalnız context katmanı olarak gösterilir; BIST kanıtının yerine geçmez." />
@@ -1750,11 +1766,11 @@ export function DashboardApp({ initialTab = "overview" }) {
               </div>
             </Panel>
           </div>
-        </div>
+        </div></TabErrorBoundary>
       ) : null}
       {activeTab === "evaluation" ? <div className="mt-6 grid gap-6 xl:grid-cols-[0.7fr_1.3fr]"><Panel><SectionTitle title="Evaluation Controls" subtext="Heuristic-first eval ve gate snapshot" /><div className="grid gap-3"><select className="field" value={evalMode} onChange={(e) => setEvalMode(e.target.value)}><option value="heuristic">heuristic</option><option value="hybrid">hybrid</option><option value="mock">mock</option><option value="real">real</option></select><select className="field" value={evalProvider} onChange={(e) => setEvalProvider(e.target.value)}><option value="auto">auto</option><option value="ollama">ollama</option><option value="groq">groq</option><option value="gemini">gemini</option><option value="openai">openai</option><option value="together">together</option></select><input className="field" value={evalSampleSize} onChange={(e) => setEvalSampleSize(e.target.value)} /><button className="btn-primary" onClick={runEval} disabled={evalBusy}>{evalBusy ? "Çalışıyor..." : "Eval Çalıştır"}</button></div></Panel><Panel><SectionTitle title="Eval Scorecard" subtext="Ham JSON yerine metrik kartları" />{evalResult ? <div className="space-y-6"><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><MetricCard label="Citation Coverage" value={Number(evalResult.citation_coverage || 0).toFixed(2)} /><MetricCard label="Disclaimer Presence" value={Number(evalResult.disclaimer_presence || 0).toFixed(2)} /><MetricCard label="Contradiction Accuracy" value={Number(evalResult.contradiction_detection_accuracy || 0).toFixed(2)} /><MetricCard label="Avg Confidence" value={Number(evalResult.avg_confidence || 0).toFixed(2)} /></div><Panel className="bg-slate-950/80"><div className="mb-3 text-sm font-medium text-slate-300">Gate Results</div><div className="flex flex-wrap gap-2">{Object.entries(asObject(evalResult.gate_results)).map(([key, value]) => <Pill key={key} tone={value ? "success" : "danger"}>{key}: {String(value)}</Pill>)}</div></Panel><Panel className="bg-slate-950/80"><div className="mb-3 text-sm font-medium text-slate-300">Rubric Scores</div><MiniBarChart items={Object.entries(asObject(evalResult.rubric_scores)).map(([label, value]) => ({ label, value }))} valueFormatter={(v) => v.toFixed(2)} /></Panel></div> : <div className="text-sm text-slate-500">Henüz eval sonucu oluşmadı.</div>}</Panel></div> : null}
       {activeTab === "ops" ? (
-        <div className="mt-6 grid gap-6">
+        <TabErrorBoundary key="ops"><div className="mt-6 grid gap-6">
           <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <Panel>
               <SectionTitle title="Audit Verification Wall" subtext="Append-only zincirin doğrulama durumu, kırılımı ve hash preview." />
@@ -1985,7 +2001,7 @@ export function DashboardApp({ initialTab = "overview" }) {
               </div>
             </Panel>
           </div>
-        </div>
+        </div></TabErrorBoundary>
       ) : null}
       <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/70 px-5 py-4 text-center text-sm text-slate-400">This system does not provide investment advice.</div>
     </div>

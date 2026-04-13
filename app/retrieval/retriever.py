@@ -30,7 +30,35 @@ class Retriever:
             parts.append(f"date <= {as_of_date.isoformat()}")
         return " AND ".join(parts)
 
-    def _hybrid_alpha_for_query(self, query: str, source_types: list[SourceType] | None) -> float:
+    @staticmethod
+    def _alpha_for_question_type(question_type: str | None) -> float | None:
+        """Return hybrid alpha based on structured question_type from intent router.
+
+        Returns ``None`` when question_type is unknown so the caller can
+        fall back to the keyword-based heuristic.
+        """
+        if question_type in ("ticker_lookup", "price_query", "kap_disclosure_types"):
+            return 0.3  # BM25-heavy for exact matches
+        if question_type in ("thematic", "narrative", "contradiction",
+                             "narrative_evolution", "brokerage_narrative"):
+            return 0.8  # vector-heavy for semantic
+        if question_type in ("consistency_check",):
+            return 0.65
+        if question_type in ("relationship_query",):
+            return 0.5
+        return None  # unknown — fall through to keyword heuristic
+
+    def _hybrid_alpha_for_query(
+        self,
+        query: str,
+        source_types: list[SourceType] | None,
+        question_type: str | None = None,
+    ) -> float:
+        # Prefer structured question_type when available
+        type_alpha = self._alpha_for_question_type(question_type)
+        if type_alpha is not None:
+            return type_alpha
+
         q = query.lower()
         if "kap" in q or (source_types and source_types == [SourceType.KAP]):
             return 0.35
@@ -49,6 +77,7 @@ class Retriever:
         source_types: list[SourceType] | None = None,
         as_of_date: datetime | None = None,
         top_k: int | None = None,
+        question_type: str | None = None,
     ) -> tuple[list[DocumentChunk], dict[str, Any]]:
         k = top_k or self.settings.max_top_k
         trace = {
@@ -57,7 +86,8 @@ class Retriever:
             "top_k": k,
             "metadata_filter": self._metadata_filter_expression(ticker, source_types, as_of_date),
             "steps": [],
-            "hybrid_alpha": self._hybrid_alpha_for_query(query, source_types),
+            "hybrid_alpha": self._hybrid_alpha_for_query(query, source_types, question_type),
+            "question_type": question_type,
             "ts": datetime.now(UTC).isoformat(),
         }
 
@@ -113,8 +143,9 @@ class Retriever:
         source_types: list[SourceType] | None = None,
         as_of_date: datetime | None = None,
         top_k: int | None = None,
+        question_type: str | None = None,
     ) -> list[DocumentChunk]:
-        docs, _ = self.retrieve_with_trace(query, ticker, source_types, as_of_date, top_k)
+        docs, _ = self.retrieve_with_trace(query, ticker, source_types, as_of_date, top_k, question_type)
         return docs
 
     def latest_trace(self) -> dict[str, Any]:

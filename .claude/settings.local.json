@@ -18,7 +18,10 @@
       "WebFetch(domain:langwatch.ai)",
       "Bash(grep -E \"^D:\\\\\\\\\\\\\\\\rag projesi/\\(app|frontend\\)\")",
       "Bash(npx next:*)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=512\" npx next build)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=512\" npx next build)",
+      "Bash(python -c \"from app.service import BISTAgentService; print\\('service import OK'\\)\")",
+      "Bash(python -m pytest tests/unit/test_wave3_features.py -x -q)",
+      "Bash(python -m pytest tests/ -x -q)"
     ]
   }
 }

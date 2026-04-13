@@ -36,9 +36,15 @@ jobs = JobRegistry()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
+    allow_origins=[
+        "http://localhost:3311",
+        "http://127.0.0.1:3311",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        settings.web_ui_url if hasattr(settings, "web_ui_url") and settings.web_ui_url else "",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 app.middleware("http")(rate_limit_middleware)
@@ -360,6 +366,11 @@ def source_catalog(_auth: None = Depends(_require_api_token)) -> dict:
 @app.get("/v1/source-health")
 def source_health(_auth: None = Depends(_require_api_token)) -> dict:
     return service.get_source_health_report()
+
+
+@app.post("/v1/sources/warm-up")
+def warm_up_sources(_auth: None = Depends(_require_api_token)) -> dict:
+    return service.warm_up_all_sources()
 
 
 @app.get("/v1/crypto/context")

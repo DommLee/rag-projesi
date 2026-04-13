@@ -239,12 +239,14 @@ Evidence snippets:
             return {"graph_context": {"error": str(exc)}}
 
     def retriever_pass1(self, state: AgentState) -> AgentState:
+        q_type = state.get("question_type")
         docs, trace = self.retriever.retrieve_with_trace(
             query=state["question"],
             ticker=state["ticker"],
             source_types=state.get("source_plan"),
             as_of_date=state.get("as_of_date"),
             top_k=self.settings.max_top_k,
+            question_type=q_type,
         )
         evidence_gaps = list(state.get("evidence_gaps", []))
         if not docs and state.get("source_plan"):
@@ -254,6 +256,7 @@ Evidence snippets:
                 source_types=None,
                 as_of_date=state.get("as_of_date"),
                 top_k=self.settings.max_top_k,
+                question_type=q_type,
             )
             trace["fallback_any_source"] = fallback_trace
             if fallback_docs:
@@ -271,6 +274,7 @@ Evidence snippets:
                     source_types=state.get("source_plan"),
                     as_of_date=state.get("as_of_date"),
                     top_k=self.settings.max_top_k,
+                    question_type=q_type,
                 )
                 trace["hyde_expansion"] = hyde_trace
                 existing_ids = {id(d) for d in docs}
@@ -354,6 +358,7 @@ Evidence snippets:
             source_types=[SourceType.KAP, SourceType.NEWS, SourceType.BROKERAGE],
             as_of_date=state.get("as_of_date"),
             top_k=self.settings.max_top_k + 4,
+            question_type=state.get("question_type"),
         )
         return {"pass2_docs": docs}
 
@@ -368,6 +373,7 @@ Evidence snippets:
             source_types=opposing,
             as_of_date=state.get("as_of_date"),
             top_k=max(3, self.settings.max_top_k // 2),
+            question_type=state.get("question_type"),
         )
         return {"counterfactual_docs": docs}
 
