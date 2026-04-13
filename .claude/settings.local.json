@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls:*)",
+      "WebSearch",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python -m pytest tests/unit/test_kap_api_client.py tests/unit/test_persistent_memory.py tests/unit/test_eval_metric_proxies.py -x --tb=short)",
+      "Bash(python -m pytest --tb=short)",
+      "Bash(python -c ':*)",
+      "Bash(grep -A 5 \"class.*Connector\" \"D:\\\\rag projesi/app/connectors/\"*.py)",
+      "Bash(pip install:*)",
+      "Bash(python -m pytest tests/unit/test_new_features.py -x --tb=short)",
+      "Bash(python -m pytest tests/unit/test_wave3_features.py -x --tb=short)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:www.zeroentropy.dev)",
+      "WebFetch(domain:langwatch.ai)",
+      "Bash(grep -E \"^D:\\\\\\\\\\\\\\\\rag projesi/\\(app|frontend\\)\")",
+      "Bash(npx next:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=512\" npx next build)"
+    ]
+  }
+}

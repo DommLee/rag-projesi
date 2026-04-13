@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import unicodedata
 from collections import Counter, defaultdict
@@ -9,21 +9,28 @@ import numpy as np
 
 from app.models.embeddings import embed_text
 from app.schemas import DocumentChunk, SourceType
+from app.utils.text import normalize_visible_text
 
 
 CONTRADICTION_CUES = {
-    "olumlu": {"artış", "güçlü", "iyileşme", "onay"},
-    "olumsuz": {"azalış", "zayıf", "iptal", "ceza", "reddedildi"},
+    "olumlu": {"artış", "güçlü", "iyileşme", "onay", "büyüme", "destek"},
+    "olumsuz": {"azalış", "zayıf", "iptal", "ceza", "reddedildi", "gerileme"},
 }
 
 
 def _normalize_token(token: str) -> str:
-    normalized = unicodedata.normalize("NFC", token.strip().lower())
+    cleaned = normalize_visible_text(token).strip().lower()
+    normalized = unicodedata.normalize("NFC", cleaned)
     return "".join(ch for ch in normalized if ch.isalnum())
 
 
 def _tokenize(text: str) -> list[str]:
-    return [_normalize_token(tok) for tok in text.split() if _normalize_token(tok)]
+    tokens = []
+    for raw in normalize_visible_text(text).split():
+        normalized = _normalize_token(raw)
+        if normalized:
+            tokens.append(normalized)
+    return tokens
 
 
 def narrative_drift_radar(chunks: list[DocumentChunk]) -> dict[str, Any]:
@@ -31,7 +38,7 @@ def narrative_drift_radar(chunks: list[DocumentChunk]) -> dict[str, Any]:
     for chunk in chunks:
         dt = chunk.date.astimezone(UTC)
         week_key = f"{dt.year}-W{dt.isocalendar().week:02d}"
-        by_week[week_key].append(np.array(embed_text(chunk.content)))
+        by_week[week_key].append(np.array(embed_text(normalize_visible_text(chunk.content))))
 
     ordered = sorted(by_week.items(), key=lambda x: x[0])
     drift = []
@@ -47,9 +54,30 @@ def narrative_drift_radar(chunks: list[DocumentChunk]) -> dict[str, Any]:
     return {"weekly_drift": drift}
 
 
+def tension_timeline(chunks: list[DocumentChunk]) -> dict[str, Any]:
+    by_week: dict[str, list[DocumentChunk]] = defaultdict(list)
+    for chunk in chunks:
+        dt = chunk.date.astimezone(UTC)
+        week_key = f"{dt.year}-W{dt.isocalendar().week:02d}"
+        by_week[week_key].append(chunk)
+
+    timeline = []
+    for week_key, week_chunks in sorted(by_week.items(), key=lambda item: item[0]):
+        snapshot = disclosure_news_tension_index(week_chunks)
+        timeline.append(
+            {
+                "week": week_key,
+                "tension_index": float(snapshot.get("tension_index", 0.0)),
+                "lexical_overlap": float(snapshot.get("lexical_overlap", 0.0)),
+                "sample_size": len(week_chunks),
+            }
+        )
+    return {"weekly_tension": timeline}
+
+
 def disclosure_news_tension_index(chunks: list[DocumentChunk]) -> dict[str, Any]:
-    kap_text = " ".join(c.content for c in chunks if c.source_type == SourceType.KAP)
-    news_text = " ".join(c.content for c in chunks if c.source_type == SourceType.NEWS)
+    kap_text = " ".join(normalize_visible_text(c.content) for c in chunks if c.source_type == SourceType.KAP)
+    news_text = " ".join(normalize_visible_text(c.content) for c in chunks if c.source_type == SourceType.NEWS)
     if not kap_text or not news_text:
         return {"tension_index": 0.0, "reason": "insufficient_cross_source_data"}
 
@@ -74,11 +102,23 @@ def broker_bias_lens(chunks: list[DocumentChunk], top_terms: int = 8) -> dict[st
     for chunk in chunks:
         if chunk.source_type != SourceType.BROKERAGE:
             continue
-        by_institution[chunk.institution].update(_tokenize(chunk.content))
+        institution = normalize_visible_text(chunk.institution) or "Unknown"
+        by_institution[institution].update(_tokenize(chunk.content))
 
     profile: dict[str, Any] = {}
     for institution, counter in by_institution.items():
         profile[institution] = counter.most_common(top_terms)
+    institutions_summary = []
+    for institution, terms in profile.items():
+        top_term_volume = sum(count for _, count in terms)
+        total_volume = sum(by_institution[institution].values()) or 1
+        institutions_summary.append(
+            {
+                "institution": institution,
+                "theme_score": round(min(1.0, top_term_volume / total_volume), 4),
+                "top_terms": [term for term, _ in terms[:4]],
+            }
+        )
 
     institutions = list(profile.keys())
     divergence: dict[str, float] = {}
@@ -89,5 +129,5 @@ def broker_bias_lens(chunks: list[DocumentChunk], top_terms: int = 8) -> dict[st
             jaccard = len(base_terms.intersection(other_terms)) / (len(base_terms.union(other_terms)) or 1)
             divergence[f"{institutions[0]}_vs_{other}"] = round(1 - jaccard, 4)
 
-    return {"theme_profile": profile, "wording_divergence": divergence}
+    return {"theme_profile": profile, "wording_divergence": divergence, "institutions": institutions_summary}
 

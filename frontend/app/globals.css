@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -7,7 +7,15 @@
 }
 
 body {
-  @apply bg-slate-950 text-slate-100 antialiased;
+  @apply bg-[#07111f] text-slate-100 antialiased text-[16px] leading-7;
+  background-image:
+    radial-gradient(circle at top left, rgba(6, 182, 212, 0.14), transparent 30%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 28%),
+    linear-gradient(180deg, #07111f 0%, #0b1220 48%, #08101d 100%);
+}
+
+pre {
+  @apply leading-7;
 }
 
 .glass-card {
@@ -20,5 +28,33 @@ body {
 
 .section-title {
   @apply text-sm font-semibold uppercase tracking-wide text-emerald-300;
+}
+
+.field {
+  @apply w-full rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-500;
+}
+
+.btn-primary {
+  @apply rounded-2xl border border-emerald-600 bg-emerald-600 px-5 py-3 font-medium text-white transition hover:bg-emerald-500;
+}
+
+.btn-secondary {
+  @apply rounded-2xl border border-slate-700 bg-slate-900/80 px-5 py-3 font-medium text-slate-100 transition hover:border-cyan-600 hover:text-cyan-200;
+}
+
+.tab-chip {
+  @apply rounded-full border border-slate-800 bg-slate-950/70 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-cyan-700 hover:text-cyan-200;
+}
+
+.tab-chip-active {
+  @apply border-emerald-700 bg-emerald-900/30 text-emerald-200;
+}
+
+.ticker-chip {
+  @apply rounded-full border border-slate-800 bg-slate-950/80 px-4 py-2 text-sm text-slate-200 transition hover:border-cyan-700 hover:text-cyan-200;
+}
+
+.ticker-chip-active {
+  @apply border-emerald-700 bg-emerald-900/30 text-emerald-200;
 }
 

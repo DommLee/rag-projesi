@@ -4,13 +4,24 @@ Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with 
 
 ## Real Project Upgrades (v2.0)
 - Persistent job registry (SQLite-backed) for ingestion/eval jobs across restarts
+- **Persistent ClaimLedger and MemoryStore** (SQLite-backed) — ledger of supported /
+  unsupported claims and weekly ticker snapshots survive restart
+- **Public KAP REST API client** (`app/ingestion/kap_api.py`) — primary path for
+  KAP disclosures (uses `search/combined` + `disclosure/members/byCriteria`),
+  HTML scraper retained as graceful fallback
+- **Expanded Turkish news coverage** — 14 RSS feeds across Dünya, Mynet, Habertürk,
+  Sözcü, Foreks, Investing.com TR, plus existing wire services
+- **RAGAS + DeepEval heuristic proxies** — both harnesses now ship numeric metrics
+  in CI (faithfulness, answer_relevancy, context_precision/recall, hallucination_rate)
+  via lexical-overlap proxies when API keys are missing, and switch to the real
+  libraries automatically when `OPENAI_API_KEY` is set
 - CI pipeline via GitHub Actions (`.github/workflows/ci.yml`)
 - Environment validator script (`scripts/validate_env.py`)
 - Docker context optimization (`.dockerignore`)
 
 ## Core Capabilities
-- KAP HTML ingestion + parsing
-- News RSS/HTML ingestion
+- KAP REST API ingestion + HTML scraper fallback
+- News RSS/HTML ingestion (14 Turkish feeds)
 - Brokerage PDF ingestion + OCR fallback
 - Weaviate-backed retrieval with metadata-first filtering
 - Agentic loop: `retrieve -> verify -> re-retrieve -> answer`

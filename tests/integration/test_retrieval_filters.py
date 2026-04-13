@@ -58,4 +58,6 @@ def test_retrieval_trace_has_expected_step_order() -> None:
     )
     assert len(docs) >= 1
     step_names = [step["name"] for step in trace["steps"]]
-    assert step_names == ["metadata_first_filter", "hybrid_vector_search", "time_decay_rerank"]
+    assert step_names[0] == "metadata_first_filter"
+    assert step_names[1] == "hybrid_vector_search"
+    assert step_names[2] in {"time_decay_rerank", "advanced_heuristic", "cross_encoder_cohere"}

@@ -59,12 +59,19 @@ class ReportIngestor(BaseIngestor):
             "policy_applied": True,
             "blocked_count": 0,
             "retry_count": 0,
+            "fetched_count": 0,
+            "success_count": 0,
+            "last_success_at": "",
+            "blocked_reason_counts": {},
         }
 
     def _download_pdf(self, url: str) -> str:
         decision = self.policy.decide(url)
         if not decision.allowed:
             self.last_policy_summary["blocked_count"] = int(self.last_policy_summary["blocked_count"]) + 1
+            reasons = dict(self.last_policy_summary.get("blocked_reason_counts", {}))
+            reasons[decision.reason] = int(reasons.get(decision.reason, 0)) + 1
+            self.last_policy_summary["blocked_reason_counts"] = reasons
             raise RuntimeError(f"Blocked by crawling policy: {decision.reason} ({url})")
         self.policy.wait_rate_limit(url)
         parsed = urlparse(url)
@@ -79,6 +86,7 @@ class ReportIngestor(BaseIngestor):
                 response.raise_for_status()
                 with open(tmp_path, "wb") as file_obj:
                     file_obj.write(response.content)
+                self.last_policy_summary["fetched_count"] = int(self.last_policy_summary["fetched_count"]) + 1
                 return tmp_path
             except Exception as exc:  # noqa: BLE001
                 self.last_policy_summary["retry_count"] = int(self.last_policy_summary["retry_count"]) + 1
@@ -125,7 +133,15 @@ class ReportIngestor(BaseIngestor):
         notification_types: list[str] | None = None,
     ) -> list[DocumentChunk]:
         _ = notification_types
-        self.last_policy_summary = {"policy_applied": True, "blocked_count": 0, "retry_count": 0}
+        self.last_policy_summary = {
+            "policy_applied": True,
+            "blocked_count": 0,
+            "retry_count": 0,
+            "fetched_count": 0,
+            "success_count": 0,
+            "last_success_at": "",
+            "blocked_reason_counts": {},
+        }
         chunks: list[DocumentChunk] = []
         for src in source_urls:
             local_path = src
@@ -173,9 +189,13 @@ class ReportIngestor(BaseIngestor):
                 if date_to and parse_date(raw.date) > date_to:
                     continue
                 chunks.extend(built_chunks)
+                if built_chunks:
+                    self.last_policy_summary["success_count"] = int(self.last_policy_summary["success_count"]) + 1
             except Exception as exc:  # noqa: BLE001
                 logger.warning("Report ingestion failed for %s: %s", src, exc)
             finally:
                 if downloaded and os.path.exists(local_path):
                     os.remove(local_path)
+        if chunks:
+            self.last_policy_summary["last_success_at"] = now_utc().isoformat()
         return chunks

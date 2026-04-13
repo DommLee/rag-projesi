@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.config import get_settings
-from app.retrieval.rerank import rerank_with_time_decay
+from app.retrieval.rerank import rerank_advanced, rerank_with_time_decay, try_cross_encoder_rerank
 from app.schemas import DocumentChunk, SourceType
 from app.vectorstore.types import VectorStore
 
@@ -30,6 +30,18 @@ class Retriever:
             parts.append(f"date <= {as_of_date.isoformat()}")
         return " AND ".join(parts)
 
+    def _hybrid_alpha_for_query(self, query: str, source_types: list[SourceType] | None) -> float:
+        q = query.lower()
+        if "kap" in q or (source_types and source_types == [SourceType.KAP]):
+            return 0.35
+        if any(token in q for token in ["tema", "theme", "narrative", "anlat", "değiş", "degis", "evolution"]):
+            return 0.8
+        if any(token in q for token in ["çeliş", "celis", "contradict", "align", "tutarlı", "tutarli"]):
+            return 0.65
+        if any(token in q for token in ["ticker", "bildirim", "rapor", "kaç", "kac", "list", "liste"]):
+            return 0.3
+        return float(self.settings.weaviate_hybrid_alpha_default)
+
     def retrieve_with_trace(
         self,
         query: str,
@@ -45,6 +57,7 @@ class Retriever:
             "top_k": k,
             "metadata_filter": self._metadata_filter_expression(ticker, source_types, as_of_date),
             "steps": [],
+            "hybrid_alpha": self._hybrid_alpha_for_query(query, source_types),
             "ts": datetime.now(UTC).isoformat(),
         }
 
@@ -62,6 +75,7 @@ class Retriever:
             source_types=source_types,
             as_of_date=as_of_date,
             top_k=k,
+            alpha=trace["hybrid_alpha"],
         )
         trace["steps"].append(
             {
@@ -71,13 +85,22 @@ class Retriever:
             }
         )
 
+        # Reranking pipeline: Cohere cross-encoder when configured, otherwise local heuristic.
         start_rerank = time.perf_counter()
-        reranked = rerank_with_time_decay(docs)
+        cross_encoder_result = try_cross_encoder_rerank(query, docs, top_k=k)
+        if cross_encoder_result is not None:
+            reranked = cross_encoder_result
+            rerank_method = "cohere_rerank"
+        else:
+            reranked = rerank_advanced(docs, query=query)
+            rerank_method = "advanced_heuristic"
         trace["steps"].append(
             {
-                "name": "time_decay_rerank",
+                "name": rerank_method,
                 "duration_ms": round((time.perf_counter() - start_rerank) * 1000, 2),
                 "items": len(reranked),
+                "sentiment_weight_applied": True,
+                "cohere_rerank_used": rerank_method == "cohere_rerank",
             }
         )
         self.trace_history.append(trace)

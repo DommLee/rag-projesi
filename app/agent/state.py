@@ -27,6 +27,9 @@ class AgentState(TypedDict, total=False):
 
     evidence_coverage: float
     contradiction_confidence: float
+    rule_tension: float
+    llm_tension: float
+    tension_mode: str
     should_reretrieve: bool
     consistency_assessment: str
 
@@ -37,4 +40,8 @@ class AgentState(TypedDict, total=False):
     evidence_gaps: list[str]
     citation_coverage_score: float
     provider_used: str
+    rewritten_question: str
+    reflection_applied: bool
     retrieval_trace: dict
+    web_search_results: list[dict]
+    graph_context: dict

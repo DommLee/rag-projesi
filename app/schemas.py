@@ -11,6 +11,8 @@ class SourceType(str, Enum):
     KAP = "kap"
     NEWS = "news"
     BROKERAGE = "brokerage"
+    USER_UPLOAD = "user_upload"
+    SOCIAL = "social"
     BROKER_REPORT = "brokerage"  # backward-compatible alias
 
 
@@ -40,6 +42,19 @@ class DocumentChunk(BaseModel):
     confidence: float = Field(default=0.8, ge=0.0, le=1.0)
     title: str = ""
     chunk_id: str = ""
+    source_channel: str = ""
+    source_reliability: float = Field(default=0.7, ge=0.0, le=1.0)
+    author: str = ""
+    author_handle: str = ""
+    engagement: int = 0
+    entity_aliases: list[str] = Field(default_factory=list)
+    discovered_via: str = ""
+    raw_doc_path: str = ""
+    analysis_cache_key: str = ""
+    sentiment_score: float = Field(default=0.0, ge=-1.0, le=1.0)
+    sentiment_label: str = "neutral"
+    session_id: str = ""
+    upload_id: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("ticker")
@@ -95,6 +110,9 @@ class QueryRequest(BaseModel):
     provider_pref: str | None = None
     provider_overrides: dict[str, str] | None = None
     session_id: str = "default"
+    include_user_files: bool = False
+    include_social_signal: bool = False
+    time_range: str = "30d"
 
     @field_validator("ticker")
     @classmethod
@@ -163,6 +181,121 @@ class EvalResult(BaseModel):
     artifacts: dict[str, str] = Field(default_factory=dict)
     notes: list[str] = Field(default_factory=list)
     details: list[dict[str, Any]]
+
+
+class SummaryCard(BaseModel):
+    label: str
+    value: str
+    tone: str = "neutral"
+    hint: str = ""
+
+
+class TimelineEvent(BaseModel):
+    title: str
+    date: datetime
+    source_type: str
+    institution: str = ""
+    note: str = ""
+    url: str = ""
+
+
+class TableBlock(BaseModel):
+    title: str
+    columns: list[str]
+    rows: list[dict[str, Any]]
+
+
+class ChatQueryRequest(BaseModel):
+    ticker: str = Field(min_length=1)
+    message: str = Field(min_length=3)
+    session_id: str = "default"
+    as_of_date: datetime | None = None
+    provider_pref: str | None = None
+    provider_overrides: dict[str, str] | None = None
+    include_user_files: bool = True
+    include_social_signal: bool = False
+    include_crypto_context: bool = False
+    market_scope: str = "bist"
+    research_mode: str = "quick"
+    time_range: str = "30d"
+    language: str = "bilingual"
+
+    @field_validator("ticker")
+    @classmethod
+    def clean_chat_ticker(cls, value: str) -> str:
+        return value.strip().upper()
+
+
+class ChatQueryResponse(BaseModel):
+    reply_markdown: str
+    summary_cards: list[SummaryCard] = Field(default_factory=list)
+    tables: list[TableBlock] = Field(default_factory=list)
+    timeline: list[TimelineEvent] = Field(default_factory=list)
+    citations: list[Citation] = Field(default_factory=list)
+    evidence_gaps: list[str] = Field(default_factory=list)
+    cross_asset_context: dict[str, Any] = Field(default_factory=dict)
+    route_path: str = "direct"
+    provider_used: str = "unknown"
+    audit_event_id: str = ""
+    disclaimer: str
+
+
+class UploadRecord(BaseModel):
+    upload_id: str
+    session_id: str
+    filename: str
+    stored_path: str
+    content_type: str = ""
+    ticker: str = ""
+    detected_ticker: str = ""
+    inserted_chunks: int = 0
+    parsed_pages: int = 0
+    warnings: list[str] = Field(default_factory=list)
+    created_at: datetime
+    source_type: SourceType = SourceType.USER_UPLOAD
+
+
+class UploadResponse(BaseModel):
+    upload_id: str
+    session_id: str
+    detected_ticker: str = ""
+    parsed_pages: int = 0
+    inserted_chunks: int = 0
+    warnings: list[str] = Field(default_factory=list)
+    audit_event_id: str = ""
+    retained_path: str = ""
+    retention_tier: str = "permanent"
+
+
+class UploadRequest(BaseModel):
+    session_id: str = "default"
+    ticker: str = ""
+    filename: str = ""
+    path: str = ""
+    content_base64: str = ""
+    content_type: str = ""
+
+    @field_validator("ticker")
+    @classmethod
+    def clean_upload_ticker(cls, value: str) -> str:
+        return value.strip().upper()
+
+
+class SourceCatalogEntry(BaseModel):
+    key: str
+    label: str
+    channel: str
+    authority_level: str
+    asset_scope: str = "bist"
+    legal_mode: str
+    freshness_slo_seconds: int
+    rate_limit_seconds: float
+    ticker_resolution_method: str
+    enabled: bool = True
+    enabled_by_default: bool = True
+    kind: str = "connector"
+    retention_tier: str = "permanent"
+    notes: str = ""
 
 
 class JobStatus(str, Enum):

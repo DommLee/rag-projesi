@@ -65,6 +65,18 @@ def main() -> int:
     worker_stdout, worker_stdout_path = _open_log_file(logs / "worker_local.log")
     worker_stderr, worker_stderr_path = _open_log_file(logs / "worker_local.err.log")
 
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH", "").strip()
+    root_str = str(root)
+    pythonpath_parts: list[str] = []
+    venv_site_packages = root / ".venv" / "Lib" / "site-packages"
+    if venv_site_packages.exists():
+        pythonpath_parts.append(str(venv_site_packages))
+    pythonpath_parts.append(root_str)
+    if existing_pythonpath:
+        pythonpath_parts.append(existing_pythonpath)
+    env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
+
     api_proc = subprocess.Popen(
         [
             str(python_exe),
@@ -79,12 +91,14 @@ def main() -> int:
         cwd=str(root),
         stdout=api_stdout,
         stderr=api_stderr,
+        env=env,
     )
     worker_proc = subprocess.Popen(
-        [str(python_exe), "worker/main.py"],
+        [str(python_exe), "-m", "worker.main"],
         cwd=str(root),
         stdout=worker_stdout,
         stderr=worker_stderr,
+        env=env,
     )
 
     (logs / "api_local.pid").write_text(str(api_proc.pid), encoding="utf-8")

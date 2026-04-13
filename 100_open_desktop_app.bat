@@ -6,11 +6,6 @@ set DESKTOP_AUTOSTART=1
 
 set EXE_PATH=releases\desktop\BISTAgenticRAGDesktop\BISTAgenticRAGDesktop.exe
 
-if exist "%EXE_PATH%" (
-  start "" "%ROOT%%EXE_PATH%"
-  exit /b 0
-)
-
 if exist ".venv\Scripts\pythonw.exe" (
   start "" ".venv\Scripts\pythonw.exe" "scripts\desktop_app.py"
   exit /b 0
@@ -18,6 +13,11 @@ if exist ".venv\Scripts\pythonw.exe" (
 
 if exist ".venv\Scripts\python.exe" (
   start "" ".venv\Scripts\python.exe" "scripts\desktop_app.py"
+  exit /b 0
+)
+
+if /I "%USE_RELEASE_EXE%"=="1" if exist "%EXE_PATH%" (
+  start "" "%ROOT%%EXE_PATH%"
   exit /b 0
 )
 

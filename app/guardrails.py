@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from app.config import get_settings
 from app.guardrails_claims import claim_level_coverage_score
+from app.utils.text import normalize_visible_text
 
 
 INVESTMENT_ADVICE_PATTERNS = [
@@ -32,7 +33,7 @@ class PolicyDecision:
 
 
 def _normalize_query(text: str) -> str:
-    lowered = text.lower()
+    lowered = normalize_visible_text(text).lower()
     normalized = unicodedata.normalize("NFKD", lowered)
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))
 
@@ -45,8 +46,8 @@ def pre_answer_policy(question: str) -> PolicyDecision:
             allowed=False,
             reason="investment_advice_blocked",
             refusal_tr=(
-                "Bu sistem yatırım tavsiyesi, al/sat sinyali veya fiyat/getiri tahmini üretmez. "
-                "Yalnızca kanıta dayalı piyasa anlatısı analizi sağlar."
+                "Bu sistem yatirim tavsiyesi, al/sat sinyali veya fiyat/getiri tahmini uretmez. "
+                "Yalnizca kanita dayali piyasa anlatisi analizi saglar."
             ),
             refusal_en=(
                 "This system does not provide investment advice, buy/sell signals, "
@@ -58,27 +59,29 @@ def pre_answer_policy(question: str) -> PolicyDecision:
 
 def append_disclaimer(text: str) -> str:
     disclaimer = get_settings().disclaimer
-    if disclaimer in text:
-        return text
-    return f"{text.strip()}\n\n{disclaimer}"
+    cleaned = normalize_visible_text(text)
+    if disclaimer in cleaned:
+        return cleaned
+    return f"{cleaned.strip()}\n\n{disclaimer}"
 
 
 def has_disclaimer(text: str) -> bool:
-    return get_settings().disclaimer in text
+    return get_settings().disclaimer in normalize_visible_text(text)
 
 
 def citation_coverage_score(answer_text: str, citations: list[object]) -> float:
-    score, _ = claim_level_coverage_score(answer_text, citations)
+    score, _ = claim_level_coverage_score(normalize_visible_text(answer_text), citations)
     return score
 
 
 def post_answer_policy(answer_text: str, citations: list[object]) -> tuple[bool, list[str], float]:
     gaps: list[str] = []
-    coverage, claim_gaps = claim_level_coverage_score(answer_text, citations)
-    gaps.extend(claim_gaps)
+    normalized_answer = normalize_visible_text(answer_text)
+    coverage, claim_gaps = claim_level_coverage_score(normalized_answer, citations)
+    gaps.extend(normalize_visible_text(item) for item in claim_gaps if item)
 
     if coverage < 0.5:
         gaps.append("Low claim-level citation coverage.")
-    if not has_disclaimer(answer_text):
+    if not has_disclaimer(normalized_answer):
         gaps.append("Missing mandatory disclaimer.")
     return len(gaps) == 0, list(dict.fromkeys(gaps)), coverage

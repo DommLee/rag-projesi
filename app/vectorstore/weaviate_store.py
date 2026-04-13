@@ -72,6 +72,8 @@ class WeaviateVectorStore(VectorStore):
                 {"name": "ingest_date", "dataType": ["date"]},
                 {"name": "language", "dataType": ["text"]},
                 {"name": "confidence", "dataType": ["number"]},
+                {"name": "sentiment_score", "dataType": ["number"]},
+                {"name": "sentiment_label", "dataType": ["text"]},
                 {"name": "metadata_json", "dataType": ["text"]},
             ],
         }
@@ -113,6 +115,8 @@ class WeaviateVectorStore(VectorStore):
                         "ingest_date": datetime.combine(chunk.ingest_date, datetime.min.time(), tzinfo=UTC).isoformat(),
                         "language": chunk.language,
                         "confidence": float(chunk.confidence),
+                        "sentiment_score": float(chunk.sentiment_score),
+                        "sentiment_label": chunk.sentiment_label,
                         "metadata_json": json.dumps(metadata_snapshot(chunk), ensure_ascii=False),
                     },
                 }
@@ -151,6 +155,7 @@ class WeaviateVectorStore(VectorStore):
         source_types: list[SourceType] | None,
         as_of_date: datetime | None,
         top_k: int = 8,
+        alpha: float | None = None,
     ) -> list[DocumentChunk]:
         if not self._connected:
             if self.strict_mode:
@@ -160,11 +165,13 @@ class WeaviateVectorStore(VectorStore):
         where_clause = self._where_clause(ticker, source_types, as_of_date)
         vector = embed_text(query)
         escaped_query = json.dumps(query)
+        hybrid_alpha = alpha if alpha is not None else self.settings.weaviate_hybrid_alpha_default
+        hybrid_alpha = max(0.0, min(1.0, float(hybrid_alpha)))
         gql = f"""
         {{
           Get {{
             {self.class_name}(
-              hybrid: {{query: {escaped_query}, vector: {json.dumps(vector)}, alpha: 0.65}}
+              hybrid: {{query: {escaped_query}, vector: {json.dumps(vector)}, alpha: {hybrid_alpha}}}
               {where_clause}
               limit: {top_k}
             ) {{
@@ -184,6 +191,8 @@ class WeaviateVectorStore(VectorStore):
               ingest_date
               language
               confidence
+              sentiment_score
+              sentiment_label
             }}
           }}
         }}
@@ -218,6 +227,8 @@ class WeaviateVectorStore(VectorStore):
                   ingest_date
                   language
                   confidence
+                  sentiment_score
+                  sentiment_label
                 }}
               }}
             }}
@@ -254,6 +265,8 @@ class WeaviateVectorStore(VectorStore):
                         confidence=float(row.get("confidence", 0.0)),
                         title=row.get("title", ""),
                         chunk_id=row.get("chunk_id", ""),
+                        sentiment_score=float(row.get("sentiment_score", 0.0) or 0.0),
+                        sentiment_label=row.get("sentiment_label", "neutral"),
                     )
                 )
             except Exception as exc:  # noqa: BLE001

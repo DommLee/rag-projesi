@@ -7,9 +7,9 @@ services:
       - ./:/workspace
     environment:
       NEXT_PUBLIC_API_BASE: http://api:8000
-    command: sh -c "npm install && npm run dev -- -p 3000"
+    command: sh -c "npm install && npm run dev -- -p 3311"
     ports:
-      - "3000:3000"
+      - "3311:3311"
     depends_on:
       api:
         condition: service_healthy
@@ -25,6 +25,7 @@ services:
     environment:
       WEAVIATE_URL: http://weaviate:8080
       OLLAMA_BASE_URL: http://host.docker.internal:11434
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "${API_HOST_PORT:-18000}:8000"
     depends_on:
@@ -49,6 +50,7 @@ services:
     environment:
       WEAVIATE_URL: http://weaviate:8080
       OLLAMA_BASE_URL: http://host.docker.internal:11434
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       redis:
         condition: service_healthy
@@ -98,4 +100,4 @@ services:
     container_name: bist-rag-langfuse
     profiles: ["observability"]
     ports:
-      - "3000:3000"
+      - "3305:3000"

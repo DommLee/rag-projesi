@@ -40,6 +40,7 @@ class MarketPriceService:
     def __init__(self, ttl_seconds: int = 60) -> None:
         self.ttl_seconds = ttl_seconds
         self._cache: dict[str, _CacheEntry] = {}
+        self._history: dict[str, list[tuple[datetime, float]]] = {}
         self._lock = threading.Lock()
         self._session = requests.Session()
         self._session.headers.update({"User-Agent": "BIST-Agentic-RAG/2.0 Market Module"})
@@ -131,6 +132,15 @@ class MarketPriceService:
 
     def _cache_put(self, point: PricePoint) -> None:
         self._cache[point.ticker] = _CacheEntry(point=point, updated_at=datetime.now(UTC))
+        if point.price is not None:
+            history = self._history.setdefault(point.ticker, [])
+            history.append((point.market_time, float(point.price)))
+            if len(history) > 48:
+                del history[:-48]
+
+    def _history_points(self, ticker: str) -> list[dict[str, str | float]]:
+        history = self._history.get(ticker.upper(), [])
+        return [{"ts": ts.isoformat(), "price": price} for ts, price in history[-24:]]
 
     def _cached_stale_point(self, ticker: str, reason: str) -> PricePoint | None:
         entry = self._cache.get(ticker.upper())
@@ -197,8 +207,9 @@ class MarketPriceService:
                     "provider": row.provider,
                     "stale": row.stale,
                     "note": row.note,
+                    "sparkline_points": self._history_points(row.ticker),
+                    "refresh_age_seconds": int(max(0.0, (now - row.market_time).total_seconds())),
                 }
                 for row in rows
             ],
         }
-

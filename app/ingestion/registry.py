@@ -49,6 +49,20 @@ class DocumentRegistry:
     def _fingerprint(text: str) -> str:
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def _normalize_publication_date(value: str | None) -> str:
+        if not value:
+            return ""
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            else:
+                parsed = parsed.astimezone(UTC)
+            return parsed.isoformat()
+        except Exception:  # noqa: BLE001
+            return str(value)
+
     def _upsert_document(
         self,
         *,
@@ -61,6 +75,7 @@ class DocumentRegistry:
         force_reingest: bool,
     ) -> dict:
         now = datetime.now(UTC).isoformat()
+        published_norm = self._normalize_publication_date(published_at)
         with self._connect() as conn:
             row = conn.execute(
                 "SELECT * FROM document_registry WHERE doc_id=? AND source_url=?",
@@ -81,7 +96,7 @@ class DocumentRegistry:
                         source_type,
                         ticker,
                         doc_fingerprint,
-                        published_at,
+                        published_norm,
                         now,
                         "new",
                     ),
@@ -89,7 +104,9 @@ class DocumentRegistry:
                 return {"action": "new", "ingest_version": 1}
 
             same_fingerprint = row["doc_fingerprint"] == doc_fingerprint
-            if same_fingerprint and not force_reingest:
+            old_published = self._normalize_publication_date(row["published_at"])
+            same_publication = old_published == published_norm
+            if same_fingerprint and same_publication and not force_reingest:
                 conn.execute(
                     "UPDATE document_registry SET last_seen_at=?, status=? WHERE id=?",
                     (now, "unchanged", row["id"]),
@@ -105,7 +122,7 @@ class DocumentRegistry:
                 """,
                 (
                     doc_fingerprint,
-                    published_at,
+                    published_norm,
                     now,
                     new_version,
                     "forced" if force_reingest else "updated",
@@ -162,4 +179,3 @@ class DocumentRegistry:
             seen = max(1, stats["total_docs_seen"])
             stats["dedup_rate"] = round(stats["skipped"] / seen, 4)
             return selected, stats
-

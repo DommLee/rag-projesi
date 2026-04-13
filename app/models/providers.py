@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import logging
@@ -33,7 +33,7 @@ class OllamaProvider(LLMProvider):
                 "stream": False,
                 "options": {"temperature": temperature},
             },
-            timeout=45.0,
+            timeout=120.0,
         )
         response.raise_for_status()
         data = response.json()
@@ -144,8 +144,8 @@ class GeminiProvider(LLMProvider):
 
 
 class MockProvider(LLMProvider):
-    _POS = {"artış", "güçlü", "iyileşme", "onay", "pozitif", "uyumlu"}
-    _NEG = {"azalış", "zayıf", "iptal", "ceza", "risk", "temkinli", "gecikme"}
+    _POS = {"artis", "guclu", "iyilesme", "onay", "pozitif", "uyumlu"}
+    _NEG = {"azalis", "zayif", "iptal", "ceza", "risk", "temkinli", "gecikme"}
 
     @staticmethod
     def _normalize(text: str) -> str:
@@ -220,28 +220,39 @@ class MockProvider(LLMProvider):
         consistency = self._extract_consistency(prompt)
         evidence = self._extract_first_evidence_lines(prompt)
 
-        kap_line = evidence.get("kap", "KAP kaynağında sınırlı kanıt bulundu.")
-        news_line = evidence.get("news", "Haber kaynağında sınırlı kanıt bulundu.")
-        broker_line = evidence.get("brokerage", "Aracı kurum raporlarında sınırlı kanıt bulundu.")
+        kap_line = evidence.get("kap", "KAP kaynaginda sinirli kanit bulundu.")
+        news_line = evidence.get("news", "Haber kaynaginda sinirli kanit bulundu.")
+        broker_line = evidence.get("brokerage", "Araci kurum raporlarinda sinirli kanit bulundu.")
+
+        tr_consistency = {
+            "aligned": "Kaynaklar genel olarak ayni yone isaret ediyor.",
+            "contradiction": "Kaynaklar arasinda belirgin uyumsuzluk sinyali var.",
+            "insufficient_evidence": "Saglam bir sonuca ulasmak icin kanit yetersiz.",
+        }.get(consistency, "Gorunum karisik; ek dogrulama gerektirebilir.")
+        en_consistency = {
+            "aligned": "Sources broadly point in the same direction.",
+            "contradiction": "There is a visible inconsistency across sources.",
+            "insufficient_evidence": "Evidence is too limited for a firm conclusion.",
+        }.get(consistency, "The picture is mixed and may require another retrieval pass.")
 
         answer_tr = (
-            f"{ticker} için kaynaklar {consistency} görünüm veriyor. "
-            f"KAP özeti: {kap_line[:180]} "
-            f"Haber özeti: {news_line[:180]} "
-            f"Aracı kurum özeti: {broker_line[:160]}"
+            f"{ticker} icin genel gorunum: {tr_consistency} "
+            f"Resmi durum: {kap_line[:220]} "
+            f"Haber anlatisi: {news_line[:220]} "
+            f"Araci kurum cercevesi: {broker_line[:180]}"
         )
         answer_en = (
-            f"For {ticker}, sources indicate an {consistency} profile. "
-            f"KAP summary: {kap_line[:160]} "
-            f"News summary: {news_line[:160]} "
-            f"Broker summary: {broker_line[:140]}"
+            f"For {ticker}, overall picture: {en_consistency} "
+            f"Official disclosure view: {kap_line[:180]} "
+            f"News framing: {news_line[:180]} "
+            f"Broker framing: {broker_line[:160]}"
         )
         return json.dumps(
             {
                 "answer_tr": answer_tr,
                 "answer_en": answer_en,
                 "consistency_assessment": consistency,
-                "confidence": 0.64,
+                "confidence": 0.68 if consistency == "aligned" else 0.56,
             },
             ensure_ascii=False,
         )
@@ -254,7 +265,7 @@ class MockProvider(LLMProvider):
             return self._mock_composer(prompt)
         return json.dumps(
             {
-                "answer_tr": "Kanıt yetersiz.",
+                "answer_tr": "Kanit yetersiz.",
                 "answer_en": "Insufficient evidence.",
                 "consistency_assessment": "insufficient_evidence",
                 "confidence": 0.5,

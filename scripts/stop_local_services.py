@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 import subprocess
+import time
 from pathlib import Path
 
 
@@ -40,6 +42,24 @@ def _stop_from_pid_file(pid_file: Path) -> dict:
     }
 
 
+def _wait_for_ports_to_close(ports: list[int], timeout_seconds: float = 8.0) -> dict[int, bool]:
+    deadline = time.time() + timeout_seconds
+    status = {port: False for port in ports}
+    while time.time() < deadline:
+        open_ports = []
+        for port in ports:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(0.5)
+                if sock.connect_ex(("127.0.0.1", port)) == 0:
+                    open_ports.append(port)
+                else:
+                    status[port] = True
+        if not open_ports:
+            return status
+        time.sleep(0.5)
+    return status
+
+
 def main() -> int:
     args = parse_args()
     logs = Path(args.logs_dir)
@@ -56,10 +76,10 @@ def main() -> int:
     ]:
         marker.unlink(missing_ok=True)
 
-    print(json.dumps({"stops": items}, ensure_ascii=False))
+    port_closure = _wait_for_ports_to_close([18000, 18001, 18002, 8088])
+    print(json.dumps({"stops": items, "port_closure": port_closure}, ensure_ascii=False))
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -17,9 +17,9 @@ class VectorStore(Protocol):
         source_types: list[SourceType] | None,
         as_of_date: datetime | None,
         top_k: int = 8,
+        alpha: float | None = None,
     ) -> list[DocumentChunk]:
         raise NotImplementedError
 
     def health(self) -> dict:
         raise NotImplementedError
-

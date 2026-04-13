@@ -376,7 +376,8 @@ class DesktopApp:
             self.status_var.set(f"Service not reachable at {self._base_url()}")
 
     def open_dashboard(self) -> None:
-        preferred = os.environ.get("WEB_UI_URL", "http://127.0.0.1:3000").strip()
+        default_ui_port = os.environ.get("WEB_UI_PORT", "3311").strip() or "3311"
+        preferred = os.environ.get("WEB_UI_URL", f"http://127.0.0.1:{default_ui_port}").strip()
         try:
             response = requests.get(preferred, timeout=1.5)
             if response.status_code < 500:

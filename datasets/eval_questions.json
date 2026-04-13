@@ -14,4 +14,19 @@
   {"ticker":"ISCTR","question":"Find consistency or mismatch between official and media statements for ISCTR.","expected_consistency":"contradiction","min_citations":3,"must_include_time":true},
   {"ticker":"SASA","question":"What is the timeline-aware summary for SASA from KAP and news?","expected_consistency":"inconclusive","min_citations":2,"must_include_time":true},
   {"ticker":"TCELL","question":"Which recurring topics appear in TCELL brokerage reports this month?","expected_consistency":"inconclusive","min_citations":2,"must_include_time":true}
+ ,{"ticker":"PGSUS","question":"Do recent PGSUS news headlines align with official disclosures?","expected_consistency":"aligned","min_citations":3,"must_include_time":true}
+ ,{"ticker":"SAHOL","question":"Summarize the latest SAHOL KAP-driven narrative and media framing.","expected_consistency":"inconclusive","min_citations":3,"must_include_time":true}
+ ,{"ticker":"TCELL","question":"Are there any contradiction signals between TCELL disclosures and market news?","expected_consistency":"contradiction","min_citations":3,"must_include_time":true}
+ ,{"ticker":"DOAS","question":"What changed in DOAS narrative after the latest official filing?","expected_consistency":"inconclusive","min_citations":2,"must_include_time":true}
+ ,{"ticker":"AEFES","question":"Which themes are repeated across AEFES news and brokerage commentary?","expected_consistency":"aligned","min_citations":3,"must_include_time":true}
+ ,{"ticker":"KOZAL","question":"Identify potential mismatch between KOZAL KAP statements and media narrative.","expected_consistency":"contradiction","min_citations":3,"must_include_time":true}
+ ,{"ticker":"VAKBN","question":"Provide a time-aware summary of recent VAKBN disclosures and news coverage.","expected_consistency":"inconclusive","min_citations":2,"must_include_time":true}
+ ,{"ticker":"ULKER","question":"What evidence-backed storyline appears for ULKER across sources?","expected_consistency":"aligned","min_citations":3,"must_include_time":true}
+ ,{"ticker":"ENKAI","question":"Do ENKAI media summaries overstate or align with official disclosure content?","expected_consistency":"contradiction","min_citations":3,"must_include_time":true}
+ ,{"ticker":"ARCLK","question":"Summarize ARCLK narrative drift over recent weeks.","expected_consistency":"inconclusive","min_citations":3,"must_include_time":true}
+ ,{"ticker":"MGROS","question":"Which official MGROS developments are echoed by financial news sources?","expected_consistency":"aligned","min_citations":2,"must_include_time":true}
+ ,{"ticker":"HEKTS","question":"Check whether HEKTS news flow contradicts recent KAP disclosures.","expected_consistency":"contradiction","min_citations":3,"must_include_time":true}
+ ,{"ticker":"ASTOR","question":"What are the dominant recent ASTOR themes across KAP, news and brokerage?","expected_consistency":"inconclusive","min_citations":3,"must_include_time":true}
+ ,{"ticker":"ENJSA","question":"Produce an evidence-backed ENJSA narrative summary with source agreement status.","expected_consistency":"aligned","min_citations":3,"must_include_time":true}
+ ,{"ticker":"TKFEN","question":"Are recent TKFEN headlines consistent with official disclosure tone?","expected_consistency":"contradiction","min_citations":3,"must_include_time":true}
 ]

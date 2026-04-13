@@ -1,13 +1,13 @@
 from fastapi.testclient import TestClient
 
-from app.api.main import app
+from app.api.main import app, service
 
 
 def test_dashboard_available() -> None:
     client = TestClient(app)
     response = client.get("/")
     assert response.status_code == 200
-    assert "BIST Agentic RAG Console" in response.text
+    assert "BIST Agentic RAG API" in response.text
 
 
 def test_metrics_endpoint() -> None:
@@ -51,3 +51,43 @@ def test_create_ingest_job() -> None:
     payload = response.json()
     assert "job_id" in payload
     assert payload["job_type"] == "ingest_news"
+
+
+def test_query_insight_endpoint(monkeypatch) -> None:
+    monkeypatch.setattr(
+        service,
+        "query_with_insight",
+        lambda request: {
+            "response": {
+                "answer_tr": "ornek",
+                "answer_en": "sample",
+                "as_of_date": "2026-04-07T00:00:00+00:00",
+                "citations": [],
+                "consistency_assessment": "inconclusive",
+                "confidence": 0.5,
+                "disclaimer": "This system does not provide investment advice.",
+                "blocked": False,
+                "citation_coverage_score": 0.0,
+                "evidence_gaps": [],
+                "used_sources": [],
+                "provider_used": "mock",
+                "route_path": "direct",
+            },
+            "analysis_sections": {
+                "official_disclosure": "kap",
+                "news_framing": "news",
+                "brokerage_view": "broker",
+                "consistency_summary": "summary",
+            },
+            "insight": {"citation_count": 0},
+            "diagnostics": {},
+        },
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/v1/query/insight",
+        json={"ticker": "ASELS", "question": "latest picture", "language": "bilingual"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["analysis_sections"]["official_disclosure"] == "kap"

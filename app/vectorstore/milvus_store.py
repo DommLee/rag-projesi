@@ -42,6 +42,7 @@ class VectorStore(Protocol):
         source_types: list[SourceType] | None,
         as_of_date: datetime | None,
         top_k: int = 8,
+        alpha: float | None = None,
     ) -> list[DocumentChunk]:
         raise NotImplementedError
 
@@ -79,6 +80,7 @@ class InMemoryVectorStore(VectorStore):
         source_types: list[SourceType] | None,
         as_of_date: datetime | None,
         top_k: int = 8,
+        alpha: float | None = None,
     ) -> list[DocumentChunk]:
         qvec = np.array(embed_text(query))
         scored: list[tuple[float, DocumentChunk]] = []
@@ -193,11 +195,12 @@ class MilvusVectorStore(VectorStore):
         source_types: list[SourceType] | None,
         as_of_date: datetime | None,
         top_k: int = 8,
+        alpha: float | None = None,
     ) -> list[DocumentChunk]:
         if not self._connected or not self._collection:
             if self.settings.milvus_strict_mode:
                 raise RuntimeError("Milvus strict mode enabled: in-memory fallback is not allowed for search.")
-            return self._fallback.search(query, ticker, source_types, as_of_date, top_k)
+            return self._fallback.search(query, ticker, source_types, as_of_date, top_k, alpha=alpha)
 
         expr_parts: list[str] = []
         if ticker:

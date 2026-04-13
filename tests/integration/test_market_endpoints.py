@@ -37,13 +37,20 @@ def test_market_universe_endpoint(monkeypatch) -> None:
     monkeypatch.setattr(
         service,
         "get_ticker_universe",
-        lambda limit=50: {"count": 2, "items": [{"ticker": "ASELS", "priority_score": 9.1, "reason": "test"}]},
+        lambda limit=50, mode="priority", queue=None: {
+            "count": 2,
+            "mode": mode,
+            "queue": queue,
+            "items": [{"ticker": "ASELS", "priority_score": 9.1, "reason": "test", "queue": "hot"}],
+        },
     )
     client = TestClient(app)
-    response = client.get("/v1/market/universe?limit=2")
+    response = client.get("/v1/market/universe?limit=2&mode=all&queue=hot")
     assert response.status_code == 200
     payload = response.json()
     assert payload["count"] == 2
+    assert payload["mode"] == "all"
+    assert payload["queue"] == "hot"
     assert payload["items"][0]["ticker"] == "ASELS"
 
 

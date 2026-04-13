@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -15,19 +16,21 @@ import requests
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Start modern BIST Agentic RAG app (API + Next.js UI)")
     parser.add_argument("--api-port", type=int, default=18002)
-    parser.add_argument("--ui-port", type=int, default=3000)
+    parser.add_argument("--ui-port", type=int, default=3311)
+    parser.add_argument("--ui-mode", choices=["prod", "dev"], default="prod")
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--skip-ui", action="store_true")
     parser.add_argument("--timeout-seconds", type=int, default=90)
     return parser.parse_args()
 
 
-def wait_http(url: str, timeout_seconds: int) -> bool:
+def wait_http(url: str, timeout_seconds: int, expected_statuses: set[int] | None = None) -> bool:
     started = time.time()
+    ok = expected_statuses or {200}
     while time.time() - started < timeout_seconds:
         try:
             response = requests.get(url, timeout=2)
-            if response.status_code < 500:
+            if response.status_code in ok:
                 return True
         except Exception:
             pass
@@ -55,7 +58,7 @@ def main() -> int:
     )
 
     api_base = f"http://127.0.0.1:{args.api_port}"
-    if not wait_http(f"{api_base}/v1/health", timeout_seconds=45):
+    if not wait_http(f"{api_base}/v1/health", timeout_seconds=45, expected_statuses={200}):
         raise SystemExit("API health check failed.")
 
     ui_proc: subprocess.Popen | None = None
@@ -66,17 +69,24 @@ def main() -> int:
         env["NEXT_PUBLIC_API_BASE"] = api_base
         env["PORT"] = str(args.ui_port)
         frontend = root / "frontend"
+        shutil.rmtree(frontend / ".next", ignore_errors=True)
         if not (frontend / "node_modules").exists():
             subprocess.run([npm_cmd, "install"], cwd=str(frontend), check=True)
+        if args.ui_mode == "prod":
+            subprocess.run([npm_cmd, "run", "build"], cwd=str(frontend), env=env, check=True)
+            ui_cmd = [npm_cmd, "run", "start", "--", "-H", "127.0.0.1", "-p", str(args.ui_port)]
+        else:
+            ui_cmd = [npm_cmd, "run", "dev", "--", "-H", "127.0.0.1", "-p", str(args.ui_port)]
+
         ui_proc = subprocess.Popen(
-            [npm_cmd, "run", "dev", "--", "-p", str(args.ui_port)],
+            ui_cmd,
             cwd=str(frontend),
             env=env,
             stdout=(logs / "web_ui.log").open("w", encoding="utf-8"),
             stderr=(logs / "web_ui.err.log").open("w", encoding="utf-8"),
             creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
         )
-        if not wait_http(ui_base, timeout_seconds=args.timeout_seconds):
+        if not wait_http(ui_base, timeout_seconds=args.timeout_seconds, expected_statuses={200}):
             raise SystemExit("Web UI did not start in time.")
 
     if not args.no_browser:

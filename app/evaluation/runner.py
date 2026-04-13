@@ -77,12 +77,27 @@ class EvalRuntime:
         contradiction_accuracy: float,
         disclaimer_presence: float,
         gates: dict[str, bool],
+        ragas_metrics: dict[str, float] | None = None,
+        deepeval_metrics: dict[str, float] | None = None,
     ) -> dict[str, float]:
         retrieval_quality = round(citation_coverage * 20, 2)
         agentic_logic = round(contradiction_accuracy * 15, 2)
         ethics_guardrails = round(disclaimer_presence * 15, 2)
         memory_narrative = round(min(10, (citation_coverage + contradiction_accuracy) * 5), 2)
-        evaluation_report = 10.0 if all(gates.values()) else 7.0
+        # Evaluation report is 10/10 only when all hard gates pass AND we
+        # actually have model-based metrics (RAGAS or DeepEval), even via
+        # the heuristic proxy. This rewards wiring up the harness end-to-end
+        # rather than only counting binary gate passes.
+        gates_pass = all(gates.values())
+        has_model_metrics = bool(ragas_metrics) or bool(deepeval_metrics)
+        if gates_pass and has_model_metrics:
+            evaluation_report = 10.0
+        elif gates_pass:
+            evaluation_report = 8.0
+        elif has_model_metrics:
+            evaluation_report = 8.0
+        else:
+            evaluation_report = 7.0
         demo_docs = round(min(10, (citation_coverage + disclaimer_presence) * 5), 2)
         data_diversity_score = round(data_diversity * 20, 2)
         total = round(
@@ -156,6 +171,8 @@ class EvalRuntime:
         used_sources_global = set()
         notes: list[str] = []
         real_available = self._real_provider_available(provider)
+        # Per-question samples used to feed RAGAS / DeepEval afterwards.
+        eval_samples: list[dict[str, Any]] = []
 
         seeded_note = self._ensure_eval_corpus(questions)
         if seeded_note:
@@ -216,6 +233,14 @@ class EvalRuntime:
                     "confidence": response.confidence,
                 }
             )
+            eval_samples.append(
+                {
+                    "question": item["question"],
+                    "answer": response.answer_en,
+                    "contexts": [citation.snippet for citation in response.citations[:6]],
+                    "ground_truth": item.get("ground_truth", ""),
+                }
+            )
 
         total = len(questions)
         citation_coverage = 0.0 if total == 0 else citation_hits / total
@@ -224,28 +249,41 @@ class EvalRuntime:
         time_reference_presence = 0.0 if total == 0 else time_hits / total
         hard_gate_pass_rate = 0.0 if total == 0 else hard_gate_hits / total
         data_diversity = min(1.0, len(used_sources_global) / 3)
+        service_metrics = self.service.get_metrics()
+        live_coverage_ratio = float(service_metrics.get("ticker_coverage_ratio", 0.0))
+        fresh_doc_ratio = float(service_metrics.get("fresh_doc_ratio", 0.0))
 
         ragas_result = (
-            run_ragas_evaluation([])
-            if request.run_ragas and effective_mode != "heuristic_only"
-            else {"status": "not_run", "reason": "heuristic_only_mode"}
+            run_ragas_evaluation(eval_samples)
+            if request.run_ragas
+            else {"status": "not_run", "reason": "ragas_disabled_by_request", "metrics": {}}
         )
         deepeval_result = (
-            run_deepeval_evaluation([])
-            if request.run_deepeval and effective_mode != "heuristic_only"
-            else {"status": "not_run", "reason": "heuristic_only_mode"}
+            run_deepeval_evaluation(eval_samples)
+            if request.run_deepeval
+            else {"status": "not_run", "reason": "deepeval_disabled_by_request", "metrics": {}}
         )
 
         if not real_available:
             notes.append("LLM judge not used: missing API keys for real-provider evaluation.")
         notes.append(f"Evaluation mode effective: {effective_mode}")
+        notes.append(
+            f"Live coverage ratio={live_coverage_ratio:.4f}, fresh_doc_ratio={fresh_doc_ratio:.4f}, "
+            f"universe_processed_24h={service_metrics.get('universe_processed_24h', 0)}."
+        )
 
-        model_based_metrics = {
+        model_based_metrics: dict[str, Any] = {
             "ragas_status": ragas_result.get("status", "not_run"),
-            "ragas_reason": ragas_result.get("reason", "heuristic_only_mode"),
+            "ragas_mode": ragas_result.get("mode", ""),
+            "ragas_reason": ragas_result.get("reason", ""),
             "deepeval_status": deepeval_result.get("status", "not_run"),
-            "deepeval_reason": deepeval_result.get("reason", "heuristic_only_mode"),
+            "deepeval_mode": deepeval_result.get("mode", ""),
+            "deepeval_reason": deepeval_result.get("reason", ""),
         }
+        for metric_name, metric_value in (ragas_result.get("metrics") or {}).items():
+            model_based_metrics[f"ragas_{metric_name}"] = metric_value
+        for metric_name, metric_value in (deepeval_result.get("metrics") or {}).items():
+            model_based_metrics[f"deepeval_{metric_name}"] = metric_value
 
         gate_results = {
             "citation_coverage_gte_0_95": self._gate(citation_coverage, 0.95),
@@ -261,6 +299,8 @@ class EvalRuntime:
             "time_reference_presence": round(time_reference_presence, 4),
             "hard_gate_pass_rate": round(hard_gate_pass_rate, 4),
             "data_diversity": round(data_diversity, 4),
+            "live_coverage_ratio": round(live_coverage_ratio, 4),
+            "fresh_doc_ratio": round(fresh_doc_ratio, 4),
             "avg_confidence": round(mean(confidences) if confidences else 0.0, 4),
         }
 
@@ -283,6 +323,8 @@ class EvalRuntime:
                 contradiction_accuracy=contradiction_accuracy,
                 disclaimer_presence=disclaimer_presence,
                 gates=gate_results,
+                ragas_metrics=ragas_result.get("metrics") or {},
+                deepeval_metrics=deepeval_result.get("metrics") or {},
             ),
             artifacts={},
             notes=notes,

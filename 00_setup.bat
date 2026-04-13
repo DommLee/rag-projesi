@@ -3,9 +3,31 @@ setlocal EnableDelayedExpansion
 set ROOT=%~dp0
 cd /d "%ROOT%"
 
+set BOOTSTRAP_PYTHON=
+if exist ".venv\Scripts\python.exe" (
+  ".venv\Scripts\python.exe" -c "import sys; print(sys.version)" >nul 2>nul
+  if not errorlevel 1 set BOOTSTRAP_PYTHON=.venv\Scripts\python.exe
+)
+if "%BOOTSTRAP_PYTHON%"=="" (
+  where python >nul 2>nul
+  if not errorlevel 1 set BOOTSTRAP_PYTHON=python
+)
+if "%BOOTSTRAP_PYTHON%"=="" (
+  where py >nul 2>nul
+  if not errorlevel 1 set BOOTSTRAP_PYTHON=py -3.12
+)
+if "%BOOTSTRAP_PYTHON%"=="" (
+  echo [00_setup] No working Python runtime found.
+  echo [00_setup] Install Python 3.12 or 3.11 first, then rerun this file.
+  echo [00_setup] After Python install, use:
+  echo [00_setup]   1. 00_setup.bat
+  echo [00_setup]   2. 110_run_modern_app.bat
+  exit /b 1
+)
+
 echo [00_setup] Creating virtual environment...
 if not exist ".venv\Scripts\python.exe" (
-  python -m venv .venv
+  %BOOTSTRAP_PYTHON% -m venv .venv
   if errorlevel 1 exit /b 1
 )
 
