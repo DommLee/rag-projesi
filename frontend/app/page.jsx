@@ -1902,7 +1902,7 @@ export function DashboardApp({ initialTab = "overview" }) {
                   <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
                     Default LLM: <span className="text-white">{providerRegistry?.defaults?.llm_default || "-"}</span>
                     <br />
-                    Embedding: <span className="text-white">{providerRegistry?.defaults?.embedding_provider || "-"} / {providerRegistry?.defaults?.embedding_model || "-"}</span>
+                    Embedding: <span className="text-white">{providerRegistry?.defaults?.embedding_provider || "-"} / {typeof providerRegistry?.defaults?.embedding_model === "object" ? JSON.stringify(providerRegistry.defaults.embedding_model) : String(providerRegistry?.defaults?.embedding_model || "-")}</span>
                   </div>
                 </div>
               </div>
