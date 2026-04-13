@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
@@ -30,7 +31,23 @@ from app.utils.logging import configure_logging
 
 configure_logging()
 settings = get_settings()
-app = FastAPI(title="BIST Agentic RAG", version=settings.app_version)
+
+@asynccontextmanager
+async def lifespan(fastapi_app: FastAPI):
+    # Run warmup automatically in the background on startup
+    import threading
+    def auto_warmup():
+        try:
+            logger.info("Auto-warming up all sources...")
+            service.warm_up_all_sources()
+            logger.info("Auto-warmup complete.")
+        except Exception as e:
+            logger.error(f"Auto-warmup failed: {e}")
+    threading.Thread(target=auto_warmup, daemon=True).start()
+    yield
+    # Shutdown logic if needed
+
+app = FastAPI(title="BIST Agentic RAG", version=settings.app_version, lifespan=lifespan)
 service = BISTAgentService()
 jobs = JobRegistry()
 
