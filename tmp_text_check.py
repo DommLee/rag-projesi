@@ -1,4 +1,5 @@
-﻿from app.utils.text import repair_mojibake, normalize_visible_text
+﻿from app.utils.text import normalize_visible_text, repair_mojibake
+
 samples = [
     'itibarÄ±yla',
     'iÃ§in',

@@ -114,7 +114,6 @@ def _heuristic_metrics(samples: list[dict[str, Any]]) -> dict[str, float]:
 # ---------------------------------------------------------------------- #
 def _try_real_ragas(samples: list[dict[str, Any]]) -> dict[str, Any] | None:
     try:
-        from datasets import Dataset  # type: ignore
         from ragas import evaluate  # type: ignore
         from ragas.metrics import (  # type: ignore
             answer_relevancy,
@@ -122,6 +121,8 @@ def _try_real_ragas(samples: list[dict[str, Any]]) -> dict[str, Any] | None:
             context_recall,
             faithfulness,
         )
+
+        from datasets import Dataset  # type: ignore
     except Exception as exc:  # noqa: BLE001
         logger.info("RAGAS real path unavailable: %s", exc)
         return None

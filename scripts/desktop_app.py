@@ -9,12 +9,12 @@ import subprocess
 import sys
 import threading
 import time
+import tkinter as tk
 import webbrowser
 from pathlib import Path
+from tkinter import messagebox, ttk
 
 import requests
-import tkinter as tk
-from tkinter import messagebox, ttk
 
 
 def _bootstrap_import_path() -> None:
@@ -305,7 +305,8 @@ class DesktopApp:
                 result = func()
                 self.root.after(0, lambda: self._append_output(success_title, result))
             except Exception as exc:  # noqa: BLE001
-                self.root.after(0, lambda: self._append_output("ERROR", str(exc)))
+                err_msg = str(exc)
+                self.root.after(0, lambda msg=err_msg: self._append_output("ERROR", msg))
 
         threading.Thread(target=runner, daemon=True).start()
 
@@ -490,8 +491,9 @@ def main() -> int:
     args, _ = parser.parse_known_args()
 
     if args.run_api:
-        from app.api.main import app as api_app
         import uvicorn
+
+        from app.api.main import app as api_app
 
         uvicorn.run(api_app, host="0.0.0.0", port=args.port, log_level="info")
         return 0

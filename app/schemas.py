@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class SourceType(str, Enum):
+class SourceType(StrEnum):
     KAP = "kap"
     NEWS = "news"
     BROKERAGE = "brokerage"
@@ -75,7 +75,7 @@ class DocumentChunk(BaseModel):
         return mapping.get(lowered, value.strip() or "General Assembly")
 
     @model_validator(mode="after")
-    def align_dates(self) -> "DocumentChunk":
+    def align_dates(self) -> DocumentChunk:
         base_dt = self.publication_date or self.date or self.published_at or datetime.now(UTC)
         if base_dt.tzinfo is None:
             base_dt = base_dt.replace(tzinfo=UTC)
@@ -298,7 +298,7 @@ class SourceCatalogEntry(BaseModel):
     notes: str = ""
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"

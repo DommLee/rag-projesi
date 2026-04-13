@@ -1,2 +1,0 @@
-"""BIST Agentic RAG package."""
-

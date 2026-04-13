@@ -4,7 +4,6 @@ from typing import Any
 
 from app.schemas import DocumentChunk, SourceType
 
-
 MANDATORY_METADATA_FIELDS = (
     "ticker",
     "source_type",

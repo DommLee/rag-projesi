@@ -10,7 +10,6 @@ from pathlib import Path
 
 import requests
 
-
 DEFAULT_PORT_CANDIDATES = [18000, 18001, 18002, 8088]
 
 

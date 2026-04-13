@@ -1,11 +1,12 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import logging
 import re
 import unicodedata
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Callable
+from typing import Any
 
 from app.agent.state import AgentState
 from app.config import get_settings
@@ -609,7 +610,6 @@ Rules:
         score = state.get("citation_coverage_score", 1.0)
         gaps = state.get("evidence_gaps") or []
         citations = state.get("citations") or []
-        provider = state.get("provider_used", "mock")
 
         # If already at high quality, skip reflection
         ungrounded = [g for g in gaps if "Ungrounded claim" in g]

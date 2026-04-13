@@ -8,7 +8,6 @@ otherwise falls back to heuristic scoring.
 from __future__ import annotations
 
 import logging
-import math
 from datetime import UTC, datetime
 
 from app.config import get_settings

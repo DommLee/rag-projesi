@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     app_version: str = "2.3.0"
     app_env: str = "dev"
     log_level: str = "INFO"
-    host: str = "0.0.0.0"
+    host: str = "127.0.0.1"
     port: int = 8000
 
     vector_dim: int = 1024

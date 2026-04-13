@@ -10,7 +10,7 @@ import logging
 import threading
 import uuid
 from datetime import UTC, datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any
 
 import requests
@@ -18,13 +18,13 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
 
 
-class AlertType(str, Enum):
+class AlertType(StrEnum):
     KAP_MATERIAL_EVENT = "kap_material_event"
     CONTRADICTION_DETECTED = "contradiction_detected"
     HIGH_TENSION = "high_tension"

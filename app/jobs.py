@@ -4,9 +4,9 @@ import json
 import sqlite3
 import threading
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 from app.config import get_settings
 from app.schemas import JobRecord, JobStatus

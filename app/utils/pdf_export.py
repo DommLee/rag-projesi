@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.schemas import QueryResponse
 
 
-def _fpdf_report(result: "QueryResponse", *, ticker: str, question: str) -> bytes:
+def _fpdf_report(result: QueryResponse, *, ticker: str, question: str) -> bytes:
     from fpdf import FPDF
 
     pdf = FPDF()
@@ -92,7 +92,7 @@ def _fpdf_report(result: "QueryResponse", *, ticker: str, question: str) -> byte
     return bytes(pdf.output())
 
 
-def _minimal_pdf(result: "QueryResponse", *, ticker: str, question: str) -> bytes:
+def _minimal_pdf(result: QueryResponse, *, ticker: str, question: str) -> bytes:
     """Bare-minimum PDF without fpdf2 — just enough to be a valid PDF."""
     lines = [
         f"BIST Agentic RAG Report - {ticker}",
@@ -116,8 +116,8 @@ def _minimal_pdf(result: "QueryResponse", *, ticker: str, question: str) -> byte
     content = f"BT /F1 10 Tf 50 750 Td ({text[:800]}) Tj ET"
     content_bytes = content.encode("latin-1", errors="replace")
     stream.write(
-        f"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]"
-        f"/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n".encode()
+        b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]"
+        b"/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"
     )
     stream.write(f"4 0 obj<</Length {len(content_bytes)}>>stream\n".encode())
     stream.write(content_bytes)
@@ -132,7 +132,7 @@ def _minimal_pdf(result: "QueryResponse", *, ticker: str, question: str) -> byte
     return stream.getvalue()
 
 
-def generate_query_pdf(result: "QueryResponse", *, ticker: str, question: str) -> bytes:
+def generate_query_pdf(result: QueryResponse, *, ticker: str, question: str) -> bytes:
     try:
         return _fpdf_report(result, ticker=ticker, question=question)
     except ImportError:

@@ -8,7 +8,6 @@ from app.config import get_settings
 from app.guardrails_claims import claim_level_coverage_score
 from app.utils.text import normalize_visible_text
 
-
 INVESTMENT_ADVICE_PATTERNS = [
     r"\b(al|sat|tut)\b",
     r"\bbuy\b",

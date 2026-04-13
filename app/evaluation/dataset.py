@@ -4,7 +4,6 @@ import json
 import random
 from pathlib import Path
 
-
 DEFAULT_QUESTIONS = [
     {
         "ticker": "ASELS",

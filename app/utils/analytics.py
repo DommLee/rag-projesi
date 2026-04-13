@@ -11,7 +11,6 @@ from app.models.embeddings import embed_text
 from app.schemas import DocumentChunk, SourceType
 from app.utils.text import normalize_visible_text
 
-
 CONTRADICTION_CUES = {
     "olumlu": {"artış", "güçlü", "iyileşme", "onay", "büyüme", "destek"},
     "olumsuz": {"azalış", "zayıf", "iptal", "ceza", "reddedildi", "gerileme"},

@@ -9,7 +9,6 @@ from app.config import get_settings
 from app.market.entity_aliases import alias_keywords
 from app.utils.text import normalize_visible_text
 
-
 STOPWORDS = {
     "borsa",
     "hisse",

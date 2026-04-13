@@ -13,7 +13,6 @@ from __future__ import annotations
 from app.evaluation.deepeval_eval import run_deepeval_evaluation
 from app.evaluation.ragas_eval import run_ragas_evaluation
 
-
 _GOOD_SAMPLE = {
     "question": "ASELS son 6 ayda hangi KAP açıklamalarını yaptı?",
     "answer": (

@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.config import get_settings
-from app.retrieval.rerank import rerank_advanced, rerank_with_time_decay, try_cross_encoder_rerank
+from app.retrieval.rerank import rerank_advanced, try_cross_encoder_rerank
 from app.schemas import DocumentChunk, SourceType
 from app.vectorstore.types import VectorStore
 

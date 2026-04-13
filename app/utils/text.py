@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 
-
 MOJIBAKE_MARKERS = ("\u00c3", "\u00c4", "\u00c5", "\u00d0", "\u00de", "\u00e2")
 
 

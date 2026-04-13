@@ -1,9 +1,9 @@
+from app.config import get_settings
 from app.connectors.binance_spot import BinanceSpotContextConnector
 from app.connectors.coingecko import CoinGeckoContextConnector
 from app.connectors.premium_news import PremiumNewsConnector
 from app.connectors.tcmb import TCMBMacroConnector
 from app.connectors.x_signal import XSignalConnector
-from app.config import get_settings
 from app.sources.catalog import build_source_catalog
 
 

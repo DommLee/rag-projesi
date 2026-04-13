@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 import logging
+from collections.abc import Callable, Generator
 from datetime import UTC, datetime
-from typing import Any, Callable, Generator
+from typing import Any
 
 from app.agent.nodes import AgentNodes
 from app.agent.state import AgentState

@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
-import pytest
-
-
 # ── Query cache ────────────────────────────────────────────────────
 
 def test_query_cache_key_deterministic():
-    from app.service import BISTAgentService
     from app.schemas import QueryRequest
+    from app.service import BISTAgentService
 
     req1 = QueryRequest(ticker="THYAO", question="Test?", provider_pref="mock")
     req2 = QueryRequest(ticker="THYAO", question="Test?", provider_pref="mock")
@@ -21,8 +16,8 @@ def test_query_cache_key_deterministic():
 
 
 def test_query_cache_different_for_different_questions():
-    from app.service import BISTAgentService
     from app.schemas import QueryRequest
+    from app.service import BISTAgentService
 
     req1 = QueryRequest(ticker="THYAO", question="Q1?")
     req2 = QueryRequest(ticker="THYAO", question="Q2?")
@@ -114,7 +109,7 @@ def test_alert_manager_stats():
 
 
 def test_alert_disabled_rule():
-    from app.alerts import AlertManager, AlertSeverity, AlertType
+    from app.alerts import AlertManager, AlertType
 
     mgr = AlertManager()
     mgr.update_rule("contradiction", enabled=False)

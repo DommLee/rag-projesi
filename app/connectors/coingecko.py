@@ -6,7 +6,6 @@ import httpx
 
 from app.config import get_settings
 
-
 COIN_MAP = {
     "BTC": "bitcoin",
     "ETH": "ethereum",

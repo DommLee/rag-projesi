@@ -6,7 +6,6 @@ import httpx
 
 from app.config import get_settings
 
-
 DEFAULT_EVDS_SERIES = {
     "usd_try": "TP.DK.USD.A.YTL",
     "eur_try": "TP.DK.EUR.A.YTL",

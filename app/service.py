@@ -1,18 +1,20 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import logging
 import json
+import logging
 import threading
 import time
 from collections import Counter, deque
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Callable
 
-from app.agent.graph import AgentGraph
 from app.agent.debate import DebateOrchestrator
+from app.agent.graph import AgentGraph
 from app.alerts import AlertManager, AlertSeverity, AlertType
 from app.audit import AnalystAuditLedger
+from app.cache.redis_cache import RedisQueryCache
+from app.config import get_settings
 from app.connectors import (
     BinanceSpotContextConnector,
     CoinGeckoContextConnector,
@@ -21,8 +23,6 @@ from app.connectors import (
     WebResearchConnector,
     XSignalConnector,
 )
-from app.config import get_settings
-from app.cache.redis_cache import RedisQueryCache
 from app.evaluation.runner import EvalRuntime
 from app.ingestion.chunking import RawDoc, build_chunks
 from app.ingestion.kap import KAPIngestor
@@ -31,10 +31,10 @@ from app.ingestion.registry import DocumentRegistry
 from app.ingestion.report import ReportIngestor
 from app.ingestion.validation import metadata_snapshot, validate_chunk_contract
 from app.knowledge_graph import BISTGraphQueryEngine
+from app.market import BISTUniverseService, MarketPriceService
+from app.market.entity_aliases import alias_keywords
 from app.memory.claim_ledger import ClaimLedger
 from app.memory.store import MemoryStore
-from app.market import BISTUniverseService, MarketPriceService
-from app.market.entity_aliases import alias_keywords, detect_ticker_from_text
 from app.models.providers import RoutedLLM
 from app.retrieval.retriever import Retriever
 from app.schemas import (
@@ -2931,6 +2931,5 @@ class BISTAgentService:
             "live_universe_preview": live_universe["items"],
             "attention_leaders": attention_leaders,
             "freshness_heatmap": freshness_heatmap,
-            "active_provider": provider_runtime.get("llm_default"),
             "last_ui_sync_at": datetime.now(UTC).isoformat(),
         }

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import logging
 import time
+import warnings
 from datetime import datetime
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
-import warnings
 
 from app.config import get_settings
 from app.ingestion.base import BaseIngestor

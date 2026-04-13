@@ -4,13 +4,12 @@ import csv
 import io
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Iterable
 
 import requests
-
 
 DEFAULT_BIST_UNIVERSE: list[str] = [
     "AEFES",

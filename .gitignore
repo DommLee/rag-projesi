@@ -1,18 +1,41 @@
+# Virtual environments
 .venv/
+
+# Python caches
 __pycache__/
 *.pyc
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Coverage
 .coverage
 coverage.xml
 htmlcov/
+
+# Secrets
 .env
+
+# Build artifacts & binaries
+dist/
+build/
+*.spec
+
+# Logs & runtime data
 logs/
 releases/
 data/
 tmp/
 *.log
+
+# IDE & tool dirs
 .DS_Store
+.deepeval/
+.claude/
+
+# Temp scripts
+tmp_*.py
+
+# Frontend
 frontend/node_modules/
 frontend/.next/

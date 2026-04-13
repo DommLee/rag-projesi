@@ -37,8 +37,8 @@ def _extract_pdf_text(path: str) -> str:
 
 def _ocr_pdf_text(path: str) -> str:
     try:
-        from pdf2image import convert_from_path
         import pytesseract
+        from pdf2image import convert_from_path
     except Exception as exc:  # noqa: BLE001
         raise RuntimeError(f"OCR dependencies missing: {exc}") from exc
 

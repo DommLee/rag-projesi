@@ -8,7 +8,6 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
-
 LOG_DIR_PATTERN = re.compile(r"^\d{8}_\d{4}$")
 
 

@@ -9,7 +9,6 @@ from datetime import UTC, datetime
 
 import requests
 
-
 logger = logging.getLogger(__name__)
 
 try:

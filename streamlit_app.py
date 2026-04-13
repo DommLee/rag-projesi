@@ -11,7 +11,6 @@ import pandas as pd
 import requests
 import streamlit as st
 
-
 st.set_page_config(page_title="BIST Agentic RAG v2.0", layout="wide")
 
 
