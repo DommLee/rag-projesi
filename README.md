@@ -1,5 +1,7 @@
 # BIST Agentic RAG v2.0 (Final Optimized Blueprint)
 
+🚀 **[Click Here to view the Interactive FinTech Rubric Report & Documentation!](https://dommlee.github.io/rag-projesi/docs/)**
+
 Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with explicit non-advisory guardrails.
 
 ## Real Project Upgrades (v2.0)
@@ -18,6 +20,25 @@ Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with 
 - CI pipeline via GitHub Actions (`.github/workflows/ci.yml`)
 - Environment validator script (`scripts/validate_env.py`)
 - Docker context optimization (`.dockerignore`)
+
+## System Architecture Flow
+```mermaid
+graph TD
+    A[User Query / Ticker] --> B{Source Planner Agent}
+    B -->|Priority 1| C[KAP DB API]
+    B -->|Priority 2| D[News DB]
+    B -->|Priority 3| R[Brokerage Reports]
+    C --> E[Vector Retrieval]
+    D --> E
+    R --> E
+    E --> F[Cross-Source Verifier]
+    F -->|Inconsistent/Gaps| G[Counterfactual Re-Retrieve]
+    G --> E
+    F -->|Verified Reality| H[Response Composer]
+    H --> I{Financial Guardrails}
+    I -->|Advice Detected| J[Block & Disclaimer]
+    I -->|Safe Market Intel| K[Generate Cited Answer + Disclaimer]
+```
 
 ## Core Capabilities
 - KAP REST API ingestion + HTML scraper fallback

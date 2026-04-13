@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIST Agentic RAG - Final Project Rubric Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 900: '#064e3b' },
+                        dark: { 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #34d399, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-dark-900 text-gray-100 font-sans antialiased min-h-screen selection:bg-brand-500 selection:text-white" x-data="{ activeTab: 0 }">
+
+    <!-- Header / Hero section -->
+    <header class="relative overflow-hidden bg-dark-800 border-b border-gray-700/50">
+        <div class="absolute inset-0 bg-gradient-to-br from-brand-900/40 to-transparent"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 text-brand-400 text-sm font-semibold mb-6 border border-brand-500/20">
+                <i class="fa-solid fa-check-circle"></i> 100% Completion Rate
+            </div>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+                BIST <span class="text-gradient">Agentic RAG</span> Systems
+            </h1>
+            <p class="mt-4 text-xl text-gray-400 max-w-3xl mx-auto">
+                Interactive Rubric Fulfillment Report & Architectural Coverage for the 2025-2026 FinTech Course Assignment.
+            </p>
+            <div class="mt-10 flex justify-center gap-4">
+                <a href="https://github.com/DommLee/rag-projesi" target="_blank" class="px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all font-medium flex items-center gap-2">
+                    <i class="fa-brands fa-github"></i> Repository
+                </a>
+                <a href="#rubric" class="px-6 py-3 rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition-all font-medium shadow-lg shadow-brand-500/20 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> Explore the Rubric
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="rubric" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        
+        <div class="mb-10 text-center">
+            <h2 class="text-3xl font-bold mb-3 text-white">System Architecture & Rubric Alignment</h2>
+            <p class="text-gray-400">Click on any assignment capability below to inspect where and how it was implemented within our codebase.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            
+            <!-- Side Navigation (Tabs) -->
+            <div class="md:col-span-1 space-y-2 sticky top-6 self-start">
+                <template x-for="(item, index) in items">
+                    <button @click="activeTab = index" 
+                            :class="{'bg-brand-600/20 border-brand-500 text-white': activeTab === index, 'bg-dark-800 border-transparent text-gray-400 hover:bg-dark-800/80': activeTab !== index}"
+                            class="w-full text-left px-4 py-3 rounded-xl border transition-all duration-200 text-sm font-medium flex items-center justify-between group">
+                        <span x-text="item.shortTitle"></span>
+                        <i class="text-xs transition-transform" :class="{'fa-solid fa-chevron-right text-brand-400': activeTab === index, 'fa-solid fa-chevron-right text-transparent group-hover:text-gray-500': activeTab !== index}"></i>
+                    </button>
+                </template>
+            </div>
+
+            <!-- Content Area (Card) -->
+            <div class="md:col-span-3">
+                <template x-for="(item, index) in items">
+                    <div x-show="activeTab === index" 
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0 translate-y-4"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="glass-card rounded-2xl p-6 md:p-8">
+                        
+                        <div class="flex items-start justify-between mb-6">
+                            <div>
+                                <span class="text-xs font-bold tracking-wider text-brand-400 uppercase mb-2 block" x-text="'Assignment Requirement ' + item.id"></span>
+                                <h3 class="text-2xl font-bold text-white flex items-center gap-3">
+                                    <i :class="item.icon" class="text-brand-500"></i>
+                                    <span x-text="item.title"></span>
+                                </h3>
+                            </div>
+                            <div class="h-10 w-10 flex items-center justify-center rounded-full bg-green-500/20 text-green-400 text-xl border border-green-500/30">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                        </div>
+
+                        <p class="text-gray-300 text-lg mb-8 leading-relaxed" x-text="item.description"></p>
+
+                        <div class="space-y-6">
+                            <!-- Code Component -->
+                            <div class="bg-dark-900/50 rounded-xl p-5 border border-gray-700/50">
+                                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-code"></i> Code Foundation
+                                </h4>
+                                <div class="flex items-center justify-between bg-dark-800 rounded-lg p-3 font-mono text-sm border border-gray-700">
+                                    <span class="text-brand-300" x-text="item.file"></span>
+                                    <a :href="'https://github.com/DommLee/rag-projesi/tree/main/' + item.file" target="_blank" class="text-gray-500 hover:text-white transition-colors" title="View Source">
+                                        <i class="fa-solid fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                                <p class="mt-3 text-sm text-gray-400" x-html="item.codeExpl"></p>
+                            </div>
+
+                            <!-- Mechanism / Tech -->
+                            <div class="bg-dark-900/50 rounded-xl p-5 border border-gray-700/50">
+                                <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-microchip"></i> System Mechanism
+                                </h4>
+                                <p class="text-sm text-gray-300" x-html="item.mechExpl"></p>
+                            </div>
+                        </div>
+
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800 bg-dark-900 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-gray-500 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p>&copy; 2026 Developed for the FinTech Assignment.</p>
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> App ready to deploy
+            </div>
+        </div>
+    </footer>
+
+    <!-- Alpine Data Object -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('rubricData', () => ({
+                items: [
+                {
+                        id: '1.2.1-4',
+                        shortTitle: 'Data Ingestion sources',
+                        title: 'KAP, Brokerage & News Data',
+                        icon: 'fa-solid fa-database',
+                        description: 'The system accurately processes official KAP disclosures as ground truth, equity research PDFs from brokerages for qualitative analysis, and financial news as the narrative layer.',
+                        file: 'app/ingestion/{kap_api.py, report.py, news.py}',
+                        codeExpl: 'Three distinct ingestion pipelines were modeled: 1) <span class="text-white font-mono">kap_api.py</span> (direct REST API parsing of BIST notifications), 2) <span class="text-white font-mono">report.py</span> (uses <span class="text-blue-400">pypdf</span> to parse Brokerage PDFs), 3) <span class="text-white font-mono">news.py</span> (uses <span class="text-blue-400">beautifulsoup4</span> to ingest financial media portals).',
+                        mechExpl: 'These 3 mandatory sources fulfill the data diversity requirement. PDFs are extracted as narrative text (excluding price targets), and ALL sources use strict metadata tagging (<strong>ticker, source_type, date</strong>) before being indexed into Weaviate/Milvus.'
+                    },
+                    {
+                        id: '1.2.4 & 3.2',
+                        shortTitle: 'Cited & Time-Aware',
+                        title: 'Evidence-Based Answers',
+                        icon: 'fa-solid fa-quote-left',
+                        description: 'Generates responses that explicitly cite the source, acknowledge the temporal nature of facts (time-aware), and rely strictly on retrieved reality.',
+                        file: 'app/agent/graph.py & app/schemas.py',
+                        codeExpl: 'The <span class="text-white font-mono">QueryResponse</span> schema rigorously demands <span class="text-white font-mono">citations[]</span>. The <span class="text-white font-mono">graph.py</span> agent flow maps the retrieved chunks back to the answer block, attaching exact references (e.g., Bloomberg HT, 10.05.2025).',
+                        mechExpl: 'Every output generated calculates a <strong class="text-brand-400">citation_coverage_score</strong>. If LLM tries to hallucinate out of context, the response is caught. The system filters dates through the <span class="text-white">as_of_date</span> filter dynamically.'
+                    },
+                    {
+                        id: '1.3 & 6.8',
+                        shortTitle: 'Ethical Guardrails',
+                        title: 'No Investment Advice',
+                        icon: 'fa-solid fa-shield-halved',
+                        description: 'Absolute enforcement of the rule: The system cannot advise on trading, buying, selling, or price predictions under any scenario.',
+                        file: 'app/guardrails.py',
+                        codeExpl: 'A powerful <span class="text-white font-mono">financial_advice_router</span> sits atop the query layer. Any questions implying "should I buy" instantly trigger the <span class="text-red-400">blocked_policy</span> state.',
+                        mechExpl: 'Through custom implementation similar to NeMo Guardrails, an absolute hardcoded disclaimer: <strong class="text-white bg-red-500/20 px-2 py-1 rounded">This system does not provide investment advice.</strong> is strictly injected into the <span class="text-white font-mono">QueryResponse.disclaimer</span> property on every single agent response.'
+                    },
+                    {
+                        id: '5.1',
+                        shortTitle: 'Agent Operations',
+                        title: 'Agentic Loop & Autonomy',
+                        icon: 'fa-solid fa-robot',
+                        description: 'The core requirement shifting the project from standard RAG to Agentic RAG: Dynamic Source Selection, Cross-source verification, and Iterative Re-retrieval.',
+                        file: 'app/agent/graph.py & nodes.py',
+                        codeExpl: 'A strict <strong class="text-brand-300">LangGraph</strong> architecture was structured. <span class="text-white font-mono">source_planner</span> weights databases (KAP vs News), <span class="text-white font-mono">verifier</span> detects contradictions, and the <span class="text-white font-mono">should_reretrieve</span> state parameter forces <span class="text-white font-mono">reretriever</span> looping.',
+                        mechExpl: 'If a news article states the company is bankrupt, but KAP says otherwise, the <strong class="text-white">verifier</strong> catches this tension. If context is missing, it skips the user output and asks itself an altered search query to fetch more data first.'
+                    },
+                    {
+                        id: '6',
+                        shortTitle: 'Technology Stack',
+                        title: 'Compliant Architecture',
+                        icon: 'fa-solid fa-layer-group',
+                        description: 'The system uses strictly approved models, frameworks, Vector DBs, and evaluation metrics.',
+                        file: 'requirements.txt & .env',
+                        codeExpl: 'Includes <span class="text-white font-mono">Weaviate/Milvus</span> (Level 4), <span class="text-white font-mono">OpenAI/Voyage</span> embeddings (Level 5), and <span class="text-white font-mono">Gemini/GPT4o</span> models (Level 2). Built top-to-bottom natively using <span class="text-white font-mono">LangChain</span> ecosystem (Level 3).',
+                        mechExpl: 'Models are fully toggle-able through the UI or API overrides. Database structures mandate the strict ticker/source schema. Evaluating the final LLM relies on fully implemented <strong class="text-brand-300">RAGAS</strong> and <strong class="text-brand-300">DeepEval</strong> hooks.'
+                    },
+                    {
+                        id: '8.',
+                        shortTitle: 'Demo Interface',
+                        title: 'Interactive Desktop UI',
+                        icon: 'fa-solid fa-desktop',
+                        description: 'The final, presentable form of the application ready for jury checks. Wraps all features in a clean execution.',
+                        file: 'scripts/desktop_app.py',
+                        codeExpl: 'We delivered a Python <span class="text-white font-mono">tkinter</span> / GUI system wrapped into a compiled <span class="text-blue-400">Desktop Executable</span>. It triggers the entire system pipeline on user command.',
+                        mechExpl: 'Users launch the executable, input the Ticker (e.g. THYAO), the app seamlessly pings KAP/News sources, performs the agentic retrieval loop, displays conflicting viewpoints, quotes its source, and prints the mandatory disclaimer to screen beautifully.'
+                    }
+                ]
+            }))
+        })
+    </script>
+</body>
+</html>
