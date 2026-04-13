@@ -91,14 +91,16 @@ class KAPAPIClient:
     def __init__(
         self,
         *,
-        rate_limit_seconds: float = 2.5,
+        rate_limit_seconds: float = 5.0,
         request_timeout: float = 20.0,
         max_retries: int = 2,
+        skip_html_detail: bool = False,
     ) -> None:
         self.settings = get_settings()
         self.rate_limit_seconds = rate_limit_seconds
         self.request_timeout = request_timeout
         self.max_retries = max_retries
+        self.skip_html_detail = skip_html_detail
         self.policy = LegalSafeCrawlerPolicy()
         self.session = requests.Session()
         self.session.headers.update(
@@ -159,10 +161,13 @@ class KAPAPIClient:
             logger.warning("KAP API call blocked by policy: %s -> %s", url, decision.reason)
             return None
 
+        import time as _time
         last_exc: Exception | None = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                self.policy.wait_rate_limit(url, custom_seconds=self.rate_limit_seconds)
+                # Exponential backoff: 5s, 10s, 20s...
+                wait = self.rate_limit_seconds * (2 ** (attempt - 1))
+                self.policy.wait_rate_limit(url, custom_seconds=wait)
                 response = self.session.request(
                     method,
                     url,
@@ -186,6 +191,8 @@ class KAPAPIClient:
                     url,
                     exc,
                 )
+                # Extra cooldown after failure to avoid ban
+                _time.sleep(3 * attempt)
         if last_exc:
             logger.warning("KAP API gave up on %s after %s retries", url, self.max_retries)
         return None
@@ -393,7 +400,7 @@ class KAPAPIClient:
 
         full_text = summary
         index = row.get("disclosureIndex") or row.get("disclosureIndexNumber")
-        if index:
+        if index and not self.skip_html_detail:
             html = self.fetch_disclosure_html(index)
             if html:
                 body = self._extract_body_text(html)
@@ -441,7 +448,7 @@ class KAPAPIClient:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         disclosure_classes: tuple[str, ...] = ("ODA", "FR", "DG"),
-        max_per_class: int = 25,
+        max_per_class: int = 8,
     ) -> list[DocumentChunk]:
         """Pull recent disclosures for ``ticker`` from the public KAP API.
 

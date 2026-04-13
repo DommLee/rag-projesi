@@ -31,7 +31,7 @@ class KAPIngestor(BaseIngestor):
         self.policy = LegalSafeCrawlerPolicy()
         # Public KAP REST client is the primary path; HTML scraper below is
         # the fallback when the JSON API is blocked or empty.
-        self.api_client = KAPAPIClient(rate_limit_seconds=max(2.0, rate_limit_seconds * 0.6))
+        self.api_client = KAPAPIClient(rate_limit_seconds=max(4.0, rate_limit_seconds), skip_html_detail=True)
         self.last_policy_summary: dict[str, int | bool | str | dict[str, int]] = {
             "policy_applied": True,
             "blocked_count": 0,
