@@ -574,8 +574,8 @@ export function DashboardApp({ initialTab = "overview" }) {
         call("/v1/metrics", {}, base),
         call("/v1/source-catalog", {}, base),
         call("/v1/source-health", {}, base),
-        call("/v1/market/universe?limit=18&mode=priority", {}, base),
-        call("/v1/market/prices?limit=8", {}, base),
+        call("/v1/market/universe?limit=100&mode=priority", {}, base),
+        call("/v1/market/prices?limit=100", {}, base),
         call("/v1/providers", {}, base),
         call(`/v1/uploads/${encodeURIComponent(chatSessionId)}`, {}, base)
       ]);
