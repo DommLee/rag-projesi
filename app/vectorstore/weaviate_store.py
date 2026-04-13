@@ -137,8 +137,16 @@ class WeaviateVectorStore(VectorStore):
         if ticker:
             operands.append('{path:["ticker"],operator:Equal,valueText:"%s"}' % ticker.upper())
         if source_types:
-            values = ",".join([f'"{s.value}"' for s in source_types])
-            operands.append('{path:["source_type"],operator:ContainsAny,valueTextArray:[%s]}' % values)
+            if len(source_types) == 1:
+                operands.append(
+                    '{path:["source_type"],operator:Equal,valueText:"%s"}' % source_types[0].value
+                )
+            else:
+                or_parts = ",".join(
+                    '{path:["source_type"],operator:Equal,valueText:"%s"}' % s.value
+                    for s in source_types
+                )
+                operands.append("{operator:Or,operands:[%s]}" % or_parts)
         if as_of_date:
             operands.append(
                 '{path:["publication_date"],operator:LessThanEqual,valueDate:"%s"}'
@@ -146,6 +154,8 @@ class WeaviateVectorStore(VectorStore):
             )
         if not operands:
             return ""
+        if len(operands) == 1:
+            return "where:%s" % operands[0]
         return "where:{operator:And,operands:[%s]}" % ",".join(operands)
 
     def search(
