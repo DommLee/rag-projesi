@@ -30,8 +30,12 @@ if errorlevel 1 (
 
 :open_now
 echo [112_open_full_system] Opening full system...
-start "" "http://127.0.0.1:%UI_PORT%"
 echo [112_open_full_system] UI : http://127.0.0.1:%UI_PORT%
 echo [112_open_full_system] API: http://127.0.0.1:%API_PORT%
+rundll32.exe url.dll,FileProtocolHandler "http://127.0.0.1:%UI_PORT%"
+if errorlevel 1 (
+  echo [112_open_full_system] Browser otomatik acilamadi. URL'yi elle ac:
+  echo http://127.0.0.1:%UI_PORT%
+)
 pause
 exit /b 0

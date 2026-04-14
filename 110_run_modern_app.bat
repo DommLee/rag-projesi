@@ -29,5 +29,9 @@ if errorlevel 1 (
 
 echo [110_run_modern_app] API: http://127.0.0.1:%API_PORT%
 echo [110_run_modern_app] UI : http://127.0.0.1:%UI_PORT%
-start "" "http://127.0.0.1:%UI_PORT%"
+rundll32.exe url.dll,FileProtocolHandler "http://127.0.0.1:%UI_PORT%"
+if errorlevel 1 (
+  echo [110_run_modern_app] Browser otomatik acilamadi. URL'yi elle ac:
+  echo http://127.0.0.1:%UI_PORT%
+)
 exit /b 0
