@@ -37,7 +37,7 @@
         }
     </style>
 </head>
-<body class="bg-dark-900 text-gray-100 font-sans antialiased min-h-screen selection:bg-brand-500 selection:text-white" x-data="rubricData">
+<body class="bg-dark-900 text-gray-100 font-sans antialiased min-h-screen selection:bg-brand-500 selection:text-white" x-data="{ activeTab: 0, items: window.rubricItems }">
 
     <!-- Header / Hero section -->
     <header class="relative overflow-hidden bg-dark-800 border-b border-gray-700/50">
@@ -151,10 +151,7 @@
 
     <!-- Alpine Data Object -->
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('rubricData', () => ({
-                activeTab: 0,
-                items: [
+        window.rubricItems = [
     {
         "id": "1.1",
         "shortTitle": "1.1 Core Objective",
@@ -475,9 +472,7 @@
         "codeExpl": "Uygulama arayüzü `st.api_request` olarak pipeline'ı tek tıkla çalıştırır.",
         "mechExpl": "Neden kullanıldı? Jüri ve proje değerlendirmesi için karmaşık komut satırı ekranlarından kurtulup saf ve ispatlı kullanıcı zevki(UI/UX) sağlamak."
     }
-]
-            }))
-        })
+    ];
     </script>
 </body>
 </html>

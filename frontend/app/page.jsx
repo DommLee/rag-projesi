@@ -581,8 +581,8 @@ export function DashboardApp({ initialTab = "overview" }) {
     return data;
   }
 
-  async function detectApiBase() {
-    for (const candidate of [...new Set([apiBase, ...apiCandidates])]) {
+  async function detectApiBase(preferredBase = apiBase, candidateList = apiCandidates) {
+    for (const candidate of [...new Set([preferredBase, ...candidateList].filter(Boolean))]) {
       try {
         const response = await fetch(`${candidate}/v1/health`);
         if (response.ok) {
@@ -619,7 +619,12 @@ export function DashboardApp({ initialTab = "overview" }) {
     } catch (error) { setApiStatus("error"); setGlobalError(toUserError(error)); }
   }
 
-  async function refreshAll() { const base = await detectApiBase(); if (!base) return; await loadBootstrap(base); if (autoAnalyze) await runWorkspaceAnalysis(true, base); }
+  async function refreshAll(preferredBase = apiBase, candidateList = apiCandidates) {
+    const base = await detectApiBase(preferredBase, candidateList);
+    if (!base) return;
+    await loadBootstrap(base);
+    if (autoAnalyze) await runWorkspaceAnalysis(true, base);
+  }
   async function runProviderTest(pref = providerPref) {
     try { const result = await call("/v1/provider/validate", { method: "POST", body: JSON.stringify({ provider_pref: pref === "auto" ? null : pref, provider_overrides: providerOverrides }) }); setProviderTest(result); if (pref === "ollama" && result.ok) setProviderPref("ollama"); }
     catch (error) { setProviderTest({ ok: false, error: toUserError(error) }); }
@@ -839,15 +844,17 @@ export function DashboardApp({ initialTab = "overview" }) {
   useEffect(() => {
     const runtime = readRuntimeConfig();
     const storedApi = localStorage.getItem("bist-api-base"); const storedToken = localStorage.getItem("bist-api-token"); const storedProvider = localStorage.getItem("bist-provider-pref"); const storedOllamaBase = localStorage.getItem("bist-ollama-base"); const storedOllamaModel = localStorage.getItem("bist-ollama-model");
-    setApiCandidates(runtime.apiCandidates);
-    setApiBase(runtime.apiBase || storedApi || FALLBACK_API); if (storedToken) setApiToken(storedToken); if (storedProvider) setProviderPref(storedProvider); if (storedOllamaBase) setOllamaBaseUrl(storedOllamaBase); if (storedOllamaModel) setOllamaModel(storedOllamaModel);
+    const preferredApi = runtime.apiBase || storedApi || FALLBACK_API;
+    const candidates = [...new Set([preferredApi, ...runtime.apiCandidates, storedApi, ...FALLBACK_API_CANDIDATES].filter(Boolean))];
+    setApiCandidates(candidates);
+    setApiBase(preferredApi); if (storedToken) setApiToken(storedToken); if (storedProvider) setProviderPref(storedProvider); if (storedOllamaBase) setOllamaBaseUrl(storedOllamaBase); if (storedOllamaModel) setOllamaModel(storedOllamaModel);
     const params = new URLSearchParams(window.location.search);
     const tickerParam = params.get("ticker");
     if (tickerParam) setWorkspaceTicker(tickerParam.toUpperCase());
     setActiveTab(ROUTE_TABS[window.location.pathname] || initialTab);
+    refreshAll(preferredApi, candidates);
   }, []);
   useEffect(() => { localStorage.setItem("bist-api-base", apiBase); localStorage.setItem("bist-api-token", apiToken); localStorage.setItem("bist-provider-pref", providerPref); localStorage.setItem("bist-ollama-base", ollamaBaseUrl); localStorage.setItem("bist-ollama-model", ollamaModel); }, [apiBase, apiToken, providerPref, ollamaBaseUrl, ollamaModel]);
-  useEffect(() => { refreshAll(); }, []);
   useEffect(() => { if (!autoRefresh) return undefined; const timer = setInterval(() => { refreshAll(); }, Math.max(15, Number(refreshSeconds || 60)) * 1000); return () => clearInterval(timer); }, [autoRefresh, refreshSeconds, workspaceTicker, chatSessionId]);
   useEffect(() => { if (!autoAnalyze || !apiBase) return undefined; const timer = setTimeout(() => { runWorkspaceAnalysis(true); }, 350); return () => clearTimeout(timer); }, [workspaceTicker]);
   return (

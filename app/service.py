@@ -1870,7 +1870,7 @@ class BISTAgentService:
             connector_metrics = self._connector_health.get(entry.key)
             if connector_metrics:
                 metrics.update(connector_metrics)
-            accepted_count = int(metrics.get("accepted_count", metrics.get("inserted_chunks", 0)))
+            accepted_count = int(metrics.get("accepted_count") or metrics.get("inserted_chunks") or 0)
             if not connector_metrics and entry.key in source_count_aliases:
                 accepted_count = int((metrics.get("source_counts", {}) or {}).get(source_count_aliases[entry.key], 0))
             fetched_count = int(metrics.get("fetched", 0)) or accepted_count
