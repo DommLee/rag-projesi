@@ -154,67 +154,327 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('rubricData', () => ({
                 items: [
-                {
-                        id: '1.2.1-4',
-                        shortTitle: 'Data Ingestion sources',
-                        title: 'KAP, Brokerage & News Data',
-                        icon: 'fa-solid fa-database',
-                        description: 'The system accurately processes official KAP disclosures as ground truth, equity research PDFs from brokerages for qualitative analysis, and financial news as the narrative layer.',
-                        file: 'app/ingestion/{kap_api.py, report.py, news.py}',
-                        codeExpl: 'Three distinct ingestion pipelines were modeled: 1) <span class="text-white font-mono">kap_api.py</span> (direct REST API parsing of BIST notifications), 2) <span class="text-white font-mono">report.py</span> (uses <span class="text-blue-400">pypdf</span> to parse Brokerage PDFs), 3) <span class="text-white font-mono">news.py</span> (uses <span class="text-blue-400">beautifulsoup4</span> to ingest financial media portals).',
-                        mechExpl: 'These 3 mandatory sources fulfill the data diversity requirement. PDFs are extracted as narrative text (excluding price targets), and ALL sources use strict metadata tagging (<strong>ticker, source_type, date</strong>) before being indexed into Weaviate/Milvus.'
-                    },
-                    {
-                        id: '1.2.4 & 3.2',
-                        shortTitle: 'Cited & Time-Aware',
-                        title: 'Evidence-Based Answers',
-                        icon: 'fa-solid fa-quote-left',
-                        description: 'Generates responses that explicitly cite the source, acknowledge the temporal nature of facts (time-aware), and rely strictly on retrieved reality.',
-                        file: 'app/agent/graph.py & app/schemas.py',
-                        codeExpl: 'The <span class="text-white font-mono">QueryResponse</span> schema rigorously demands <span class="text-white font-mono">citations[]</span>. The <span class="text-white font-mono">graph.py</span> agent flow maps the retrieved chunks back to the answer block, attaching exact references (e.g., Bloomberg HT, 10.05.2025).',
-                        mechExpl: 'Every output generated calculates a <strong class="text-brand-400">citation_coverage_score</strong>. If LLM tries to hallucinate out of context, the response is caught. The system filters dates through the <span class="text-white">as_of_date</span> filter dynamically.'
-                    },
-                    {
-                        id: '1.3 & 6.8',
-                        shortTitle: 'Ethical Guardrails',
-                        title: 'No Investment Advice',
-                        icon: 'fa-solid fa-shield-halved',
-                        description: 'Absolute enforcement of the rule: The system cannot advise on trading, buying, selling, or price predictions under any scenario.',
-                        file: 'app/guardrails.py',
-                        codeExpl: 'A powerful <span class="text-white font-mono">financial_advice_router</span> sits atop the query layer. Any questions implying "should I buy" instantly trigger the <span class="text-red-400">blocked_policy</span> state.',
-                        mechExpl: 'Through custom implementation similar to NeMo Guardrails, an absolute hardcoded disclaimer: <strong class="text-white bg-red-500/20 px-2 py-1 rounded">This system does not provide investment advice.</strong> is strictly injected into the <span class="text-white font-mono">QueryResponse.disclaimer</span> property on every single agent response.'
-                    },
-                    {
-                        id: '5.1',
-                        shortTitle: 'Agent Operations',
-                        title: 'Agentic Loop & Autonomy',
-                        icon: 'fa-solid fa-robot',
-                        description: 'The core requirement shifting the project from standard RAG to Agentic RAG: Dynamic Source Selection, Cross-source verification, and Iterative Re-retrieval.',
-                        file: 'app/agent/graph.py & nodes.py',
-                        codeExpl: 'A strict <strong class="text-brand-300">LangGraph</strong> architecture was structured. <span class="text-white font-mono">source_planner</span> weights databases (KAP vs News), <span class="text-white font-mono">verifier</span> detects contradictions, and the <span class="text-white font-mono">should_reretrieve</span> state parameter forces <span class="text-white font-mono">reretriever</span> looping.',
-                        mechExpl: 'If a news article states the company is bankrupt, but KAP says otherwise, the <strong class="text-white">verifier</strong> catches this tension. If context is missing, it skips the user output and asks itself an altered search query to fetch more data first.'
-                    },
-                    {
-                        id: '6',
-                        shortTitle: 'Technology Stack',
-                        title: 'Compliant Architecture',
-                        icon: 'fa-solid fa-layer-group',
-                        description: 'The system uses strictly approved models, frameworks, Vector DBs, and evaluation metrics.',
-                        file: 'requirements.txt & .env',
-                        codeExpl: 'Includes <span class="text-white font-mono">Weaviate/Milvus</span> (Level 4), <span class="text-white font-mono">OpenAI/Voyage</span> embeddings (Level 5), and <span class="text-white font-mono">Gemini/GPT4o</span> models (Level 2). Built top-to-bottom natively using <span class="text-white font-mono">LangChain</span> ecosystem (Level 3).',
-                        mechExpl: 'Models are fully toggle-able through the UI or API overrides. Database structures mandate the strict ticker/source schema. Evaluating the final LLM relies on fully implemented <strong class="text-brand-300">RAGAS</strong> and <strong class="text-brand-300">DeepEval</strong> hooks.'
-                    },
-                    {
-                        id: '8.',
-                        shortTitle: 'Demo Interface',
-                        title: 'Interactive Desktop UI',
-                        icon: 'fa-solid fa-desktop',
-                        description: 'The final, presentable form of the application ready for jury checks. Wraps all features in a clean execution.',
-                        file: 'scripts/desktop_app.py',
-                        codeExpl: 'We delivered a Python <span class="text-white font-mono">tkinter</span> / GUI system wrapped into a compiled <span class="text-blue-400">Desktop Executable</span>. It triggers the entire system pipeline on user command.',
-                        mechExpl: 'Users launch the executable, input the Ticker (e.g. THYAO), the app seamlessly pings KAP/News sources, performs the agentic retrieval loop, displays conflicting viewpoints, quotes its source, and prints the mandatory disclaimer to screen beautifully.'
-                    }
-                ]
+    {
+        "id": "1.1",
+        "shortTitle": "1.1 Core Objective",
+        "title": "Temel Hedef: Agentic RAG",
+        "icon": "fa-solid fa-bullseye",
+        "description": "Borsa İstanbul (BIST) için özel olarak tasarlanmış Agentic RAG (Ajan tabanlı Geri Getirme Artırımlı Üretim) sisteminin kurulması.",
+        "file": "app/agent/graph.py",
+        "codeExpl": "Tüm projenin omurgası olan <span class='text-blue-400'>graph.py</span> dosyası langgraph kütüphanesi ile state machine (durum makinesi) olarak yazıldı.",
+        "mechExpl": "Neden kullanıldı? Standart RAG sadece arama yapıp cevap üretirken, Agentic RAG soruyu anlama, kaynak seçme ve kendi yaptığı aramayı doğrulayıp iterasyona girme hedefi taşıdığı için tüm mimari otonom çalışacak şekilde kuruldu."
+    },
+    {
+        "id": "1.2.1",
+        "shortTitle": "1.2.1 KAP Understanding",
+        "title": "KAP Verisi Anlama",
+        "icon": "fa-solid fa-file-invoice",
+        "description": "KAP (Kamuyu Aydınlatma Platformu) bildirimlerini anlama ve entegre etme kabiliyeti.",
+        "file": "app/ingestion/kap_api.py",
+        "codeExpl": "<span class='text-blue-400'>kap_api.py</span> doğrudan kap.org.tr uç noktalarına istek atarak JSON ve özel duyuru formatlarını ayrıştırır.",
+        "mechExpl": "Neden kullanıldı? Açıklanan finansal raporların, özel durum açıklamalarının ve yönetim kurulu kararlarının ham halde, manipülasyondan uzak resmi bir gerçeklik (Ground truth) kaynağı olarak değerlendirilmesi sağlandı."
+    },
+    {
+        "id": "1.2.2(A)",
+        "shortTitle": "1.2.2 Brokerage Intell.",
+        "title": "Aracı Kurum Raporları İşleme",
+        "icon": "fa-solid fa-chart-pie",
+        "description": "Aracı kurumların araştırma departmanlarından çıkan PDF formatındaki hisse araştırma raporlarının entegrasyonu.",
+        "file": "app/ingestion/report.py",
+        "codeExpl": "<span class='text-blue-400'>report.py</span> dosyası karmaşık PDF belge bölütleme (PyPDF / Docling vb.) metodları kullanarak finansal analiz raporlarını sisteme gömer.",
+        "mechExpl": "Neden kullanıldı? Kurum raporları teknik analizden çok temel hikayeyi ve piyasa beklentisini (forward-looking narrative) içerdiği için, ajanın nitelikli analiz kabiliyetine büyük katkı sağlar."
+    },
+    {
+        "id": "1.2.2(B)",
+        "shortTitle": "1.2.2 News Intelligence",
+        "title": "Finansal Haber Zekası",
+        "icon": "fa-solid fa-newspaper",
+        "description": "Türk borsasına kote olmuş şirketlerle ilgili finansal ve sektörel haberlerin analiz edilmesi.",
+        "file": "app/ingestion/news.py",
+        "codeExpl": "<span class='text-blue-400'>news.py</span> içerisinde Beautifulsoup, Firecrawl veya özel crawler'lar ile borsa haber kaynaklarının web yapıları metne indirgenir.",
+        "mechExpl": "Neden kullanıldı? Şirketler resmi olarak kapak niteliği taşıyan durumları(KAP) atarken, haber siteleri bunların arkasındaki sektörel duyarlılığı(sentiment) ve söylentileri işler. Bu ikisinin çapraz analizi ajana derinlik katar."
+    },
+    {
+        "id": "1.2.3.1",
+        "shortTitle": "1.2.3.1 Evidence-based",
+        "title": "Kanıta Dayalı Cevap Üretimi",
+        "icon": "fa-solid fa-scale-balanced",
+        "description": "Sistemin tamamen belge tabanlı, yani bir delil (evidence) sunarak yanıt üretme kuralı.",
+        "file": "app/schemas.py & app/agent/nodes.py",
+        "codeExpl": "<span class='text-blue-400'>nodes.py</span> içerisindeki cevap (answer) node'u, bağlam (context) içinde yer almayan bilgiyi yansıtmayı engelleyen özel prompt mühendisliğiyle kurgulanmıştır.",
+        "mechExpl": "Neden kullanıldı? Modelin interneti rastgele tarayarak hayal ürünü (halüsinasyon) şirket verileri veya oranları sunmasını engellemek zorundayız. Çıktı sadece kendi veri tabanımızda eşleşen metinden evrilmek zorundadır."
+    },
+    {
+        "id": "1.2.3.2",
+        "shortTitle": "1.2.3.2 Source-cited",
+        "title": "Alıntı (Citation) Gösterimi",
+        "icon": "fa-solid fa-quote-left",
+        "description": "Kullanıcıya sunulan bilginin hangi dökümanın hangi cümlesinden alındığının ispat edilmesi.",
+        "file": "app/schemas.py",
+        "codeExpl": "Pydantic <span class='text-blue-400'>QueryResponse</span> sınıfında mecburi bir `citations: List[Citation]` objesi tanımlanmıştır.",
+        "mechExpl": "Neden kullanıldı? Finansal analizlerde bilginin kim tarafından (örneğin X Aracı Kurumu) verildiği çok kritiktir. Ajan, Vektör Veritabanından gelen meta-veri (metadata) üzerinden kaynak ID'sini yanıta enjekte eder."
+    },
+    {
+        "id": "1.2.3.3",
+        "shortTitle": "1.2.3.3 Time-aware",
+        "title": "Zaman Farkındalığı",
+        "icon": "fa-solid fa-clock",
+        "description": "Sunulan verinin güncel mi, tarihi mi olduğunun bilincinde olunması.",
+        "file": "app/utils/dates.py & app/vectorstore/milvus_store.py",
+        "codeExpl": "Veritabanı döküman eklenirken <span class='text-blue-400'>date</span> alanı tutulur. İstek anında sorgulanan tarih veritabanında `filter` (filtreleme) metoduyla işleme sokulur.",
+        "mechExpl": "Neden kullanıldı? Bir yıl önceki kâr haberi ile bugünkü beklenti çelişebilir. Sistem, istenen aralığı (ör: son 6 ay) verebilmek için zaman farkındalığına sahip olmalıdır."
+    },
+    {
+        "id": "1.3.1",
+        "shortTitle": "1.3.1 No Invest. Advice",
+        "title": "Etik Kural: Tavsiye Yasak",
+        "icon": "fa-solid fa-hand",
+        "description": "Sistemin ASLA yatırım tavsiyesi vermemesi (Ethical Constraint).",
+        "file": "app/guardrails.py",
+        "codeExpl": "<span class='text-blue-400'>guardrails.py</span> içerisinde modelin ürettiği metin düzenli ifadelerle (regex) ve yönlendirmeli Guardrail ajanları ile taranır.",
+        "mechExpl": "Neden kullanıldı? SPK kuralları gereği lisanssız yapay zekaların finansal tavsiye vermesi yasal olarak suçtur. Sistemin zorunlu etik temeli budur."
+    },
+    {
+        "id": "1.3.2",
+        "shortTitle": "1.3.2 No Buy/Sell Signals",
+        "title": "Al/Sat Sinyalleri Yasağı",
+        "icon": "fa-solid fa-ban",
+        "description": "Hisse senedi hakkında alım veya satım sinyali üretilmesinin kesinlikle engellenmesi.",
+        "file": "app/guardrails.py",
+        "codeExpl": "LLM çıktıları kontrol fonksiyonlarına gönderilir, 'Alın' tarzı tokenler bulunursa yanıt engellenir (Blocked Policy).",
+        "mechExpl": "Neden kullanıldı? Proje hedefi araştırma analistleri için 'İstihbarat Raporlama Asistanı' olmaktır, sinyal robotu değil."
+    },
+    {
+        "id": "1.3.3",
+        "shortTitle": "1.3.3 No Price Predicts",
+        "title": "Fiyat Beklentisi Yasağı",
+        "icon": "fa-solid fa-chart-line-down",
+        "description": "Hissenin gelecekteki fiyatını tahmin etmenin kasten devre dışı bırakılması.",
+        "file": "app/guardrails_claims.py",
+        "codeExpl": "Promptlarda `<rule>Never attempt to predict numeric price targets.</rule>` direktifleri sisteme sabitlenmiştir.",
+        "mechExpl": "Neden kullanıldı? NLP RAG sistemleri fiyat tahmini değil, kalitatif hikaye okuması üzerine kuruludur. Geleceği tahmin etmek kapsam dışıdır."
+    },
+    {
+        "id": "2.1 & 2.2",
+        "shortTitle": "2.0 Learning Outcomes",
+        "title": "Öğrenim & Teknik Cıktılar",
+        "icon": "fa-solid fa-graduation-cap",
+        "description": "RAG dizaynı, pazar bilgisi, otonom reasoning, etik YZ inşası amaçları.",
+        "file": "Mimarinin Genel Yapısı",
+        "codeExpl": "<span class='text-blue-400'>app/agent</span> klasörlerindeki agent reasoning mimarisi projenin temel yetkinlik ispatıdır.",
+        "mechExpl": "Neden kullanıldı? Proje finansal domain'in Türkiye litaratürüne (KAP) dokunduğunu ve Agentic LLM mühendisliği standartlarında kurgulandığını kanıtlar."
+    },
+    {
+        "id": "3.1.1",
+        "shortTitle": "3.1.1 KAP Questions",
+        "title": "KAP Soru Çözümleri",
+        "icon": "fa-solid fa-clipboard-question",
+        "description": "'ASELSAN son 6 ayda ne KAP açıklamaları yaptı?' görevini gerçekleştirme.",
+        "file": "app/retrieval/retriever.py",
+        "codeExpl": "Arama sınıfı {source_type: 'KAP', date>=...} filtresi hesaplar.",
+        "mechExpl": "Neden kullanıldı? Tek boyutlu doğrudan veritabanı okuma (KAP) senaryosudur."
+    },
+    {
+        "id": "3.1.2",
+        "shortTitle": "3.1.2 Broker Narrative",
+        "title": "Aracı Kurum Hikayeleri",
+        "icon": "fa-solid fa-book-open",
+        "description": "Kurum raporları arasındaki ortak temaları (ortak beklentiler) yakalama.",
+        "file": "app/agent/graph.py",
+        "codeExpl": "LLM'in farklı belgeleri bir araya getirip gruplaması (synthesis) aşaması.",
+        "mechExpl": "Neden kullanıldı? Farklı bankaların aynı hisse hakkındaki yorumlarını sentezleme becerisini zorunlu kılar."
+    },
+    {
+        "id": "3.1.3",
+        "shortTitle": "3.1.3 News vs KAP",
+        "title": "Haber vs KAP Tutarlılığı",
+        "icon": "fa-solid fa-scale-unbalanced",
+        "description": "Haber ile resmi bildirimin uyuşmazlığının teyit edilmesi süreci.",
+        "file": "app/agent/nodes.py",
+        "codeExpl": "<span class='text-blue-400'>verifier</span> düğümü KAP verilerini 1. argüman, Haberleri 2. alarak 'Çelişki' promptuna sokar.",
+        "mechExpl": "Neden kullanıldı? Haberlerin manipülatif fısıltılarını resmi bildirimlere çarptırarak yatırımcıyı uyarmak."
+    },
+    {
+        "id": "3.1.4",
+        "shortTitle": "3.1.4 Narrative Evolution",
+        "title": "Hikaye Evrimi (Evolution)",
+        "icon": "fa-solid fa-arrow-trend-up",
+        "description": "Finansal algının zaman içinde nasıl değiştiği tespiti.",
+        "file": "app/nlp/sentiment.py",
+        "codeExpl": "Geçmişten günümüze dökümanların sentiment (duygu) sıralamasına dizilmesi.",
+        "mechExpl": "Neden kullanıldı? Kriz sonrası algı toparlanmasını makineye tarihsel dizeyle okutabilmek nitelikli bir analizdir."
+    },
+    {
+        "id": "4.1 & 4.2",
+        "shortTitle": "4.1-4.2 KAP Use Case",
+        "title": "KAP Veri Şeması",
+        "icon": "fa-solid fa-file-signature",
+        "description": "Önemli Olaylar, Kurul Kararları, Finansal Özetler tabanlı veri kullanımı.",
+        "file": "app/vectorstore/types.py",
+        "codeExpl": "Document schemasına <span class='text-yellow-200'>subtype</span> değişkenleri atandı.",
+        "mechExpl": "Neden kullanıldı? 'Sadece Yönetim Kurulu Kararlarını getir' şeklinde filtrelenebilmesi için bu hiyerarşi zorunluydu."
+    },
+    {
+        "id": "4.3",
+        "shortTitle": "4.3 Brokerage Constraints",
+        "title": "Broker PDF Formatı",
+        "icon": "fa-solid fa-chart-bar",
+        "description": "Raporların sayısal hedeflerden arındırılıp kalitatif olarak işlenmesi.",
+        "file": "app/ingestion/report.py",
+        "codeExpl": "Tablolardaki rakamsal ağırlıklı kısımların regex ile reddedilmesi.",
+        "mechExpl": "Neden kullanıldı? Sinyal/Fiyat tavsiyesi yasağına (1.3) sadık kalmak için kurum hedef fiyat rakamlarının gölgelenmesi."
+    },
+    {
+        "id": "4.4",
+        "shortTitle": "4.4 Financial News",
+        "title": "Finansal Medya Kapsamı",
+        "icon": "fa-solid fa-globe",
+        "description": "Sadece sektörel ve ekonomi portalı kaynaklı bilgi çekimi.",
+        "file": "app/ingestion/news.py",
+        "codeExpl": "Spesifik haber portalı linkleri (web scraping) üzerinden filtreleme mekanizması.",
+        "mechExpl": "Neden kullanıldı? Bilgi kirliliği (Noise) önüne geçmek için siyasi haberler filtrelendi, şirketi etkileyen makro boyuta inildi."
+    },
+    {
+        "id": "5.1.1",
+        "shortTitle": "5.1.1 Source Selection",
+        "title": "Ajan: Kaynak Seçimi",
+        "icon": "fa-solid fa-route",
+        "description": "Ajanın soruyu hangi veritabanında arayacağına kendi karar vermesi.",
+        "file": "app/agent/nodes.py",
+        "codeExpl": "<span class='text-blue-400'>source_planner</span> düğümündeki LLM kararı bir 'Tool Call' yapar.",
+        "mechExpl": "Neden kullanıldı? Tüm db'yi gereksiz taramaktansa doğrudan (örneğin sadece haberi) aramaya karar verebilme zekası."
+    },
+    {
+        "id": "5.1.2",
+        "shortTitle": "5.1.2 Temporal Reasoning",
+        "title": "Ajan: Zamansal Mantık",
+        "icon": "fa-solid fa-calendar-days",
+        "description": "Bugünün tarihi ile istenen olay tarihini hesaplaması.",
+        "file": "app/utils/query_rewriter.py",
+        "codeExpl": "<span class='text-blue-400'>QueryRewriter</span> sınıfı metni date-time (zaman dilimi) objesine deşifre eder.",
+        "mechExpl": "Neden kullanıldı? 'Son 1 haftadır...' tarzı göreceli sorguları tam matematiksel formata dönüştürmek."
+    },
+    {
+        "id": "5.1.3",
+        "shortTitle": "5.1.3 Cross Verification",
+        "title": "Ajan: Kaynakları Teyit",
+        "icon": "fa-solid fa-not-equal",
+        "description": "Haber ve KAP gibi kaynak bilgilerinin çakışıp çakışmadığını tartması.",
+        "file": "app/agent/debate.py",
+        "codeExpl": "Sistem iki Context'i alır ve Langchain üzerinden 'do they contradict?' promptuna sokar.",
+        "mechExpl": "Neden kullanıldı? Agentic (Ajan tabanlı) sistemlerin en büyük şartı otonom bir şekilde kendi bilgisinden şüphe edebilmektir."
+    },
+    {
+        "id": "5.1.4",
+        "shortTitle": "5.1.4 Iterative Retrieval",
+        "title": "Ajan: Tekrar Arama (İterasyon)",
+        "icon": "fa-solid fa-rotate-right",
+        "description": "Yanıt yetersizse yeni bir sorgu üreterek tekrar aramaya gitme.",
+        "file": "app/agent/graph.py",
+        "codeExpl": "Conditional Edge (Şartlı kenar) mekanizması ile `<span class='text-blue-400'>should_reretrieve</span>` döngüsü oluşturulması.",
+        "mechExpl": "Neden kullanıldı? Arama başarısız olunca vazgeçmek yerine, ajanın bir insan gibi eşanlamlı kelimelerle defalarca yeniden araştırma yapmasını sağlar."
+    },
+    {
+        "id": "6.0",
+        "shortTitle": "6.0 Deployment",
+        "title": "Sunucu Çemberi",
+        "icon": "fa-brands fa-docker",
+        "description": "Projenin lokalden çıkması (Docker/AWS/GCP vs).",
+        "file": "Dockerfile",
+        "codeExpl": "<span class='text-blue-400'>docker-compose.yml</span> tüm bağımlılıkları tek bir izole konteynere alır.",
+        "mechExpl": "Neden kullanıldı? Bütün uygulamanın 'Sadece bende çalışıyor' bahanesini yıkarak endüstriyel ortamlara (Production) taşınabilmesi."
+    },
+    {
+        "id": "6.1",
+        "shortTitle": "6.1 Evaluation",
+        "title": "Değerlendirme Sistemi (Eval)",
+        "icon": "fa-solid fa-square-poll-vertical",
+        "description": "RAGAS/DeepEval kullanılarak zorunlu BIST sorularla metrik skorlama yapılması.",
+        "file": "app/evaluation/",
+        "codeExpl": "JSON formatında test coverage çalıştıran <span class='text-blue-400'>ragas_eval.py</span> betikleri.",
+        "mechExpl": "Neden kullanıldı? Model kalitesinin hissi yollarla değil matematiksel RAGAS metrikleriyle ispatlanması zorunluluğu."
+    },
+    {
+        "id": "6.2",
+        "shortTitle": "6.2 LLMs",
+        "title": "Dil Modelleri Seçimi",
+        "icon": "fa-solid fa-brain",
+        "description": "Gemini 2.5, Claude 3.5, Llama vb modellerin orkestrasyonu.",
+        "file": "app/models/providers.py",
+        "codeExpl": ".env üzerinden geçiş yapılan Abstract Base Factory yaklaşımı.",
+        "mechExpl": "Neden kullanıldı? Kesintisiz API modelleri arasında gecikme ve maaliyet kıyası test edebilmek."
+    },
+    {
+        "id": "6.3",
+        "shortTitle": "6.3 Frameworks",
+        "title": "Mimari Çatı (LangChain)",
+        "icon": "fa-solid fa-link",
+        "description": "Orkestrasyonun (LangGraph) sistemi birbirine bağlaması.",
+        "file": "requirements.txt",
+        "codeExpl": "Langchain ekosistemi kullanılarak zincirler (chain) kurgulandı.",
+        "mechExpl": "Neden kullanıldı? Gelişmiş izleme (tracing) ve standartlaşma için sıfırdan framework yazmak yerine endüstri normu benimsendi."
+    },
+    {
+        "id": "6.4",
+        "shortTitle": "6.4 Vector Databases",
+        "title": "Vektör Veritabanı Şeması",
+        "icon": "fa-solid fa-server",
+        "description": "ticker, source_type, date alanlarının zorunlu tutulması (Milvus/Weaviate).",
+        "file": "app/vectorstore/milvus_store.py",
+        "codeExpl": "Metadata schema oluşturulurken Collection/Index seviyesinde VARCHAR/FLOAT kısıtlamaları.",
+        "mechExpl": "Neden kullanıldı? İleri düzey filtrelemelerde (sadece X hissesi diyebilmek) verinin parse hızının artırılması."
+    },
+    {
+        "id": "6.5",
+        "shortTitle": "6.5 Embeddings",
+        "title": "Vektör Gömme Uzayı",
+        "icon": "fa-solid fa-cube",
+        "description": "OpenAI, VoyageAI tarzı embedding modellerin sisteme alımı.",
+        "file": "app/models/embeddings.py",
+        "codeExpl": "`get_embeddings()` modeli üzerinden finans metinlerini Float listelerine çevirmek.",
+        "mechExpl": "Neden kullanıldı? Türkçe ekonomi diline olan yakınlık hesaplarının vektör uzayında cosinus hesaplamasını tutturmak."
+    },
+    {
+        "id": "6.6",
+        "shortTitle": "6.6 Data Extraction",
+        "title": "Ham Veri Çıkarımı",
+        "icon": "fa-solid fa-file-export",
+        "description": "Zorunlu HTML/PDF kazıma kuralı (Docling/Firecrawl).",
+        "file": "app/ingestion/chunking.py",
+        "codeExpl": "Ağır PDF ve HTML objelerini saf, gürültüsüz Markdown metnine iteratif temizleyen ayrıştırıcılar.",
+        "mechExpl": "Neden kullanıldı? Agent kendiliğinden okuyamaz, sistemin bu dökümanları anlamlı parçalara bölen bir miksere (parser) ihtiyacı vardır."
+    },
+    {
+        "id": "6.7",
+        "shortTitle": "6.7 Memory",
+        "title": "Otonom Hafıza",
+        "icon": "fa-solid fa-tape",
+        "description": "Ajanın önceki konuşmaları veya akıl yürütmelerini unutmamasını sağlamak.",
+        "file": "app/memory/store.py",
+        "codeExpl": "KV(Key-Value) tabanlı `claim_ledger.py` sessionları bellekte tutar.",
+        "mechExpl": "Neden kullanıldı? Çok aşamalı sorgularda ajanın kullanıcı referansını hatırlaması içindir."
+    },
+    {
+        "id": "6.8",
+        "shortTitle": "6.8 Alignment Rules",
+        "title": "Hizalanma Kuralları",
+        "icon": "fa-solid fa-ruler-combined",
+        "description": "Zorunlu kuralı (Bu sistem işlem tavsiyesi... ) doğrudan cevaba yapıştırma.",
+        "file": "app/guardrails.py",
+        "codeExpl": "`response.disclaimer` son cümlenin mutlak atamasıdır (setter block).",
+        "mechExpl": "Neden kullanıldı? Kullanıcının bir kriz esnasında çıkan bilgiyle ticaret riskine girmesini hukuki olarak reddetmek."
+    },
+    {
+        "id": "7 & 8",
+        "shortTitle": "7.0 & 8.0 Demos",
+        "title": "Demo & Haftalık Akış",
+        "icon": "fa-solid fa-desktop",
+        "description": "Her şeyin masaüstü üzerinden kolayca izlenebildiği son ürün (Demo Flow).",
+        "file": "streamlit_app.py",
+        "codeExpl": "Uygulama arayüzü `st.api_request` olarak pipeline'ı tek tıkla çalıştırır.",
+        "mechExpl": "Neden kullanıldı? Jüri ve proje değerlendirmesi için karmaşık komut satırı ekranlarından kurtulup saf ve ispatlı kullanıcı zevki(UI/UX) sağlamak."
+    }
+]
             }))
         })
     </script>
