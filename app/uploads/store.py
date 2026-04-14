@@ -17,6 +17,16 @@ from app.utils.dates import now_utc
 from app.utils.text import normalize_visible_text, repair_mojibake
 
 
+SUPPORTED_UPLOAD_EXTENSIONS = {".pdf", ".txt", ".md", ".html", ".htm", ".csv", ".json"}
+
+
+def is_supported_upload_filename(filename: str) -> bool:
+    clean_name = Path(filename).name.strip()
+    if clean_name.startswith("~$"):
+        return False
+    return Path(clean_name).suffix.lower() in SUPPORTED_UPLOAD_EXTENSIONS
+
+
 class UploadStore:
     def __init__(self, root_dir: str, index_path: str) -> None:
         self.root_dir = Path(root_dir)
@@ -40,6 +50,8 @@ class UploadStore:
         out = []
         for row in rows:
             if row.get("session_id") == session_id:
+                if not is_supported_upload_filename(str(row.get("filename") or "")):
+                    continue
                 try:
                     out.append(UploadRecord.model_validate(row))
                 except Exception:
@@ -50,6 +62,16 @@ class UploadStore:
     @staticmethod
     def _decode_content(payload_base64: str) -> bytes:
         return base64.b64decode(payload_base64.encode("utf-8"))
+
+    @staticmethod
+    def _validate_upload_filename(filename: str) -> None:
+        clean_name = Path(filename).name.strip()
+        if clean_name.startswith("~$"):
+            raise ValueError("unsupported_upload_temporary_office_lock_file")
+        ext = Path(clean_name).suffix.lower()
+        if not is_supported_upload_filename(clean_name):
+            allowed = ", ".join(sorted(SUPPORTED_UPLOAD_EXTENSIONS))
+            raise ValueError(f"unsupported_upload_file_type:{ext or 'no_extension'}; allowed={allowed}")
 
     @staticmethod
     def _parse_plain_bytes(filename: str, content_type: str, raw: bytes) -> tuple[str, int, list[str]]:
@@ -100,6 +122,7 @@ class UploadStore:
             filename = Path(source_path).name
         if not filename:
             raise ValueError("filename_required")
+        self._validate_upload_filename(filename)
 
         upload_id = uuid.uuid4().hex
         session_dir = self.root_dir / session_id
@@ -181,3 +204,23 @@ class UploadStore:
                 break
         if changed:
             self._save_index(rows)
+
+    def delete_upload(self, upload_id: str) -> dict | None:
+        rows = self._load_index()
+        target = None
+        new_rows = []
+        for row in rows:
+            if row.get('upload_id') == upload_id:
+                target = row
+            else:
+                new_rows.append(row)
+        if target:
+            path = Path(target.get('stored_path', ''))
+            if path.exists():
+                try:
+                    path.unlink()
+                except Exception:
+                    pass
+            self._save_index(new_rows)
+            return target
+        return None

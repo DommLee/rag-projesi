@@ -23,3 +23,6 @@ class VectorStore(Protocol):
 
     def health(self) -> dict:
         raise NotImplementedError
+
+    def delete_by_url_prefix(self, prefix: str) -> int:
+        raise NotImplementedError

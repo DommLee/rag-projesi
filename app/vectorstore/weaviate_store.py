@@ -283,6 +283,19 @@ class WeaviateVectorStore(VectorStore):
                 logger.warning("Skipping malformed Weaviate row: %s", exc)
         return chunks
 
+    def delete_by_url_prefix(self, prefix: str) -> int:
+        if not self._connected:
+            return self._fallback.delete_by_url_prefix(prefix)
+        payload = {
+            "match": {
+                "class": self.class_name,
+                "where": {"path": ["url"], "operator": "Like", "valueText": f"{prefix}*"},
+            }
+        }
+        res = self._client.request("DELETE", f"{self.base_url}/v1/batch/objects", json=payload)
+        res.raise_for_status()
+        return int(res.json().get("results", {}).get("successful", 0))
+
     def health(self) -> dict:
         if self._connected:
             return {

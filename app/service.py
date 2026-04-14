@@ -58,7 +58,7 @@ from app.schemas import (
 )
 from app.sources.catalog import build_source_catalog
 from app.storage import RawDocumentLake
-from app.uploads.store import UploadStore
+from app.uploads.store import UploadStore, is_supported_upload_filename
 from app.utils.analytics import broker_bias_lens, disclosure_news_tension_index, narrative_drift_radar, tension_timeline
 from app.utils.dates import parse_date
 from app.utils.text import normalize_visible_text
@@ -2707,6 +2707,10 @@ class BISTAgentService:
                 as_of_date=request.as_of_date,
                 top_k=6,
             )
+            upload_docs = [
+                doc for doc in upload_docs
+                if is_supported_upload_filename(doc.title or str(doc.metadata.get("filename") or ""))
+            ]
             upload_citations = self.agent.nodes._build_citations(upload_docs, limit=4) if hasattr(self.agent, "nodes") else []
         citations = list(response.citations) + [c for c in upload_citations if c.url not in {row.url for row in response.citations}]
         timeline = self._build_timeline_events(response.citations)
@@ -2956,4 +2960,19 @@ class BISTAgentService:
             "attention_leaders": attention_leaders,
             "freshness_heatmap": freshness_heatmap,
             "last_ui_sync_at": datetime.now(UTC).isoformat(),
+        }
+
+    def delete_upload(self, upload_id: str) -> dict:
+        target = self.upload_store.delete_upload(upload_id)
+        if not target:
+            return {'status': 'not_found', 'upload_id': upload_id}
+
+        prefix = f'user-upload://{upload_id}/'
+        deleted_count = self.vector_store.delete_by_url_prefix(prefix)
+
+        return {
+            'status': 'ok',
+            'upload_id': upload_id,
+            'filename': target.get('filename'),
+            'deleted_chunks': deleted_count,
         }

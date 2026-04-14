@@ -103,6 +103,11 @@ class InMemoryVectorStore(VectorStore):
     def health(self) -> dict:
         return {"backend": "inmemory", "rows": len(self._rows)}
 
+    def delete_by_url_prefix(self, prefix: str) -> int:
+        initial_count = len(self._rows)
+        self._rows = [row for row in self._rows if not row.url.startswith(prefix)]
+        return initial_count - len(self._rows)
+
 
 class MilvusVectorStore(VectorStore):
     def __init__(self) -> None:

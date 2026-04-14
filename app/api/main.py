@@ -340,6 +340,11 @@ def list_uploads(session_id: str, _auth: None = Depends(_require_api_token)) -> 
     }
 
 
+@app.delete("/v1/uploads/{upload_id}")
+def delete_upload(upload_id: str, _auth: None = Depends(_require_api_token)) -> dict:
+    return service.delete_upload(upload_id)
+
+
 @app.post("/v1/eval/run")
 def run_eval(request: EvalRequest, _auth: None = Depends(_require_api_token)) -> dict:
     result = service.eval_run(request)
