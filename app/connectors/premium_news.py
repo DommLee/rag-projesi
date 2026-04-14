@@ -16,6 +16,10 @@ class PremiumNewsConnector:
         self.timeout = 20.0
 
     @property
+    def enabled(self) -> bool:
+        return self.eventregistry_enabled or self.newsapi_enabled
+
+    @property
     def eventregistry_enabled(self) -> bool:
         return bool(self.settings.eventregistry_api_key.strip())
 

@@ -18,8 +18,8 @@ import {
   YAxis
 } from "recharts";
 
-const FALLBACK_API = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:18000";
-const FALLBACK_API_CANDIDATES = (process.env.NEXT_PUBLIC_API_CANDIDATES || "http://127.0.0.1:18000,http://127.0.0.1:18002,http://127.0.0.1:18001,http://127.0.0.1:8088")
+const FALLBACK_API = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:18002";
+const FALLBACK_API_CANDIDATES = (process.env.NEXT_PUBLIC_API_CANDIDATES || "http://127.0.0.1:18002,http://127.0.0.1:18001,http://127.0.0.1:18000,http://127.0.0.1:8088")
   .split(",")
   .map((item) => item.trim())
   .filter(Boolean);

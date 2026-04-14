@@ -276,7 +276,7 @@ class WeaviateVectorStore(VectorStore):
                         title=row.get("title", ""),
                         chunk_id=row.get("chunk_id", ""),
                         sentiment_score=float(row.get("sentiment_score", 0.0) or 0.0),
-                        sentiment_label=row.get("sentiment_label", "neutral"),
+                        sentiment_label=row.get("sentiment_label") or "neutral",
                     )
                 )
             except Exception as exc:  # noqa: BLE001

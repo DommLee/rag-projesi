@@ -9,7 +9,7 @@ if not "%WEB_UI_PORT%"=="" set UI_PORT=%WEB_UI_PORT%
 if exist "logs\.runtime_api_port" (
   for /f "usebackq delims=" %%P in ("logs\.runtime_api_port") do set API_PORT=%%P
 )
-if "%API_PORT%"=="" set API_PORT=18000
+if "%API_PORT%"=="" set API_PORT=18002
 
 echo [112_open_full_system] Checking current system state...
 if /I "%FORCE_LOCAL_API%"=="1" goto start_now
@@ -28,6 +28,9 @@ if errorlevel 1 (
   echo [112_open_full_system] If Python is missing, first run 00_setup.bat after installing Python 3.11 or 3.12.
   pause
   exit /b 1
+)
+if exist "logs\.runtime_api_port" (
+  for /f "usebackq delims=" %%P in ("logs\.runtime_api_port") do set API_PORT=%%P
 )
 
 :open_now

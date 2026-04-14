@@ -380,7 +380,7 @@ class RoutedLLM:
         provider_pref: str | None = None,
         provider_overrides: dict[str, str] | None = None,
     ) -> tuple[str, str]:
-        preferred = (provider_pref or "groq").lower()
+        preferred = (provider_pref or "ollama").lower()
         provider_names: list[str]
 
         if preferred == "gemini":

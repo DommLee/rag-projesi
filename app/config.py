@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     crypto_context_enabled: bool = True
     crypto_context_symbols_csv: str = "BTC,ETH"
     tavily_api_key: str = ""
-    web_search_enabled: bool = True
+    web_search_enabled: bool = False
     alert_webhook_url: str = ""
     alert_webhook_type: str = "slack"
     redis_url: str = "redis://localhost:6379/0"

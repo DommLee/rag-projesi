@@ -39,3 +39,7 @@ tmp_*.py
 # Frontend
 frontend/node_modules/
 frontend/.next/
+node_modules/
+package-lock.json
+package.json
+.claude/settings.local.json

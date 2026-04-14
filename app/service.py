@@ -1873,7 +1873,24 @@ class BISTAgentService:
             accepted_count = int(metrics.get("accepted_count") or metrics.get("inserted_chunks") or 0)
             if not connector_metrics and entry.key in source_count_aliases:
                 accepted_count = int((metrics.get("source_counts", {}) or {}).get(source_count_aliases[entry.key], 0))
-            fetched_count = int(metrics.get("fetched", 0)) or accepted_count
+            if not connector_metrics and entry.key in source_count_aliases:
+                # The live news runner stores aggregate metrics for the whole news pass.
+                # Avoid projecting one global blocked/rejected count onto every RSS source.
+                fetched_count = accepted_count
+                row_blocked = (
+                    sum(int(value or 0) for value in (metrics.get("blocked_reason_counts", {}) or {}).values())
+                    if entry.key == "google_news_discovery"
+                    else 0
+                )
+                row_rejected = 0
+                row_blocked_reasons = metrics.get("blocked_reason_counts", {}) or {} if row_blocked else {}
+                row_last_success_at = metrics.get("last_success_at") if accepted_count else None
+            else:
+                fetched_count = int(metrics.get("fetched", 0)) or accepted_count
+                row_blocked = int(metrics.get("blocked", 0))
+                row_rejected = int(metrics.get("rejected_entity", 0))
+                row_blocked_reasons = metrics.get("blocked_reason_counts", {}) or {}
+                row_last_success_at = metrics.get("last_success_at")
             rows.append(
                 {
                     **entry.model_dump(mode="json"),
@@ -1881,17 +1898,17 @@ class BISTAgentService:
                     "inserted": int(metrics.get("inserted_chunks", 0)),
                     "dedup_skipped": int(metrics.get("dedup_skipped", 0)),
                     "accepted_count": accepted_count,
-                    "rejected_entity": int(metrics.get("rejected_entity", 0)),
-                    "blocked": int(metrics.get("blocked", 0)),
+                    "rejected_entity": row_rejected,
+                    "blocked": row_blocked,
                     "retries": int(metrics.get("retries", 0)),
                     "status": metrics.get("status", "disabled" if not entry.enabled else "idle"),
                     "error": metrics.get("error", ""),
-                    "last_success_at": metrics.get("last_success_at"),
+                    "last_success_at": row_last_success_at,
                     "policy_mode": metrics.get("policy_mode", ""),
                     "endpoint_counts": metrics.get("endpoint_counts", {}) or {},
                     "freshness_latency_seconds": metrics.get("freshness_latency_seconds"),
                     "source_counts": metrics.get("source_counts", {}) or {},
-                    "blocked_reason_counts": metrics.get("blocked_reason_counts", {}) or {},
+                    "blocked_reason_counts": row_blocked_reasons,
                     "rejected_samples": metrics.get("rejected_samples", []) or [],
                     "scraper_stats": metrics.get("scraper_stats", {}) or {},
                     "raw_lake": metrics.get("raw_lake", {}) or {},
@@ -1903,15 +1920,15 @@ class BISTAgentService:
                         4,
                     ),
                     "error_rate": round(
-                        (int(metrics.get("blocked", 0)) + int(metrics.get("rejected_entity", 0)))
-                        / max(1, fetched_count + int(metrics.get("blocked", 0))),
+                        (row_blocked + row_rejected)
+                        / max(1, fetched_count + row_blocked),
                         4,
                     ),
                     "source_health_matrix_row": {
                         "fetched": fetched_count,
                         "accepted": accepted_count,
-                        "rejected": int(metrics.get("rejected_entity", 0)),
-                        "blocked": int(metrics.get("blocked", 0)),
+                        "rejected": row_rejected,
+                        "blocked": row_blocked,
                     },
                 }
             )
@@ -2536,7 +2553,7 @@ class BISTAgentService:
             },
             "memory": {
                 "claim_ledger": self.claim_ledger.stats(),
-                "session_count": len(self.memory._sessions),
+                "session_count": len(self.memory._session_data),
             },
             "routes": {
                 "direct": self.metrics["route_direct_count"],

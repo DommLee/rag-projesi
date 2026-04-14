@@ -23,6 +23,18 @@ if not exist "node_modules" (
   if errorlevel 1 exit /b 1
 )
 
+set NEED_BUILD=0
+if not exist ".next\BUILD_ID" set NEED_BUILD=1
+if exist ".next\BUILD_ID" (
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$build=(Get-Item '.next/BUILD_ID').LastWriteTimeUtc; $newer=Get-ChildItem -Path app,public -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTimeUtc -gt $build } | Select-Object -First 1; if($newer){ exit 2 } else { exit 0 }"
+  if errorlevel 2 set NEED_BUILD=1
+)
+if "%NEED_BUILD%"=="1" (
+  echo [36_run_web_ui] Frontend source changed or build missing. Rebuilding Next.js UI...
+  call npm run build
+  if errorlevel 1 exit /b 1
+)
+
 if exist ".next\\BUILD_ID" goto prod
 
 echo [36_run_web_ui] Production build not available. Starting Next.js UI in local dev mode on http://127.0.0.1:%UI_PORT%

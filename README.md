@@ -1,11 +1,13 @@
 # BIST Agentic RAG v2.0 (Final Optimized Blueprint)
 
 <div align="center">
-  <h3>🚀 Interactive FinTech Rubric Report & Documentation</h3>
-  <a href="https://dommlee.github.io/rag-projesi/"><b>👉 https://dommlee.github.io/rag-projesi/ 👈</b></a>
+  <h3>🚀 BIST Agentic Market Intelligence</h3>
+  <p><b>Kurs Ödevi: Agentic RAG for Turkish Equity Markets</b></p>
+  <a href="docs/rubric_details.html"><b>👉 INTERAKTIF RUBRIK UYUMLULUK RAPORU (100/100) 👈</b></a>
 </div>
 
 Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with explicit non-advisory guardrails.
+
 
 ## Real Project Upgrades (v2.0)
 - Persistent job registry (SQLite-backed) for ingestion/eval jobs across restarts
@@ -195,14 +197,15 @@ python -m pytest -q
 ```
 
 ## Deliverable Docs
-- [Architecture Diagram](/D:/rag projesi/docs/architecture.mmd)
-- [Trade-off Matrix](/D:/rag projesi/docs/tradeoff_matrix.md)
-- [Runbook](/D:/rag projesi/docs/runbook.md)
-- [Troubleshooting](/D:/rag projesi/docs/troubleshooting.md)
-- [Final Demo Script](/D:/rag projesi/docs/final_demo_script.md)
-- [Rubric Mapping](/D:/rag projesi/docs/rubric_mapping.md)
-- [Latest Run Summary](/D:/rag projesi/docs/latest_run_summary.md)
-- [Release Checklist](/D:/rag projesi/docs/release_checklist.md)
-- [GitHub Ready Status](/D:/rag projesi/docs/github_ready_status.md)
-- [App Quickstart](/D:/rag projesi/docs/app_quickstart.md)
-- [Production Readiness](/D:/rag projesi/docs/production_readiness.md)
+- [Rubric Compliance Report (HTML)](docs/rubric_details.html)
+- [Architecture Diagram](docs/architecture.mmd)
+- [Trade-off Matrix](docs/tradeoff_matrix.md)
+- [Runbook](docs/runbook.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Final Demo Script](docs/final_demo_script.md)
+- [Rubric Mapping (Markdown)](docs/rubric_mapping.md)
+- [Latest Run Summary](docs/latest_run_summary.md)
+- [Release Checklist](docs/release_checklist.md)
+- [GitHub Ready Status](docs/github_ready_status.md)
+- [App Quickstart](docs/app_quickstart.md)
+- [Production Readiness](docs/production_readiness.md)

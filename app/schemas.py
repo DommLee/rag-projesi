@@ -74,6 +74,14 @@ class DocumentChunk(BaseModel):
         lowered = value.strip().lower()
         return mapping.get(lowered, value.strip() or "General Assembly")
 
+    @field_validator("sentiment_label", mode="before")
+    @classmethod
+    def normalize_sentiment_label(cls, value: Any) -> str:
+        if value is None:
+            return "neutral"
+        text = str(value).strip().lower()
+        return text or "neutral"
+
     @model_validator(mode="after")
     def align_dates(self) -> DocumentChunk:
         base_dt = self.publication_date or self.date or self.published_at or datetime.now(UTC)
