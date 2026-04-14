@@ -12,6 +12,7 @@ if exist "logs\.runtime_api_port" (
 if "%API_PORT%"=="" set API_PORT=18000
 
 echo [112_open_full_system] Checking current system state...
+if /I "%FORCE_LOCAL_API%"=="1" goto start_now
 curl.exe -fsS --max-time 3 "http://127.0.0.1:%API_PORT%/v1/health" >nul 2>nul
 set API_OK=%ERRORLEVEL%
 curl.exe -fsS --max-time 3 "http://127.0.0.1:%UI_PORT%" >nul 2>nul
@@ -19,6 +20,7 @@ set UI_OK=%ERRORLEVEL%
 
 if "%API_OK%"=="0" if "%UI_OK%"=="0" goto :open_now
 
+:start_now
 echo [112_open_full_system] Full system is not fully ready. Starting it now...
 call "%ROOT%110_run_modern_app.bat"
 if errorlevel 1 (

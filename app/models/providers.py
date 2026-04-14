@@ -24,20 +24,58 @@ class OllamaProvider(LLMProvider):
         self.base_url = (base_url or settings.ollama_base_url).rstrip("/")
         self.model = model or settings.ollama_model
 
+    def _candidate_base_urls(self) -> list[str]:
+        urls: list[str] = []
+        base = self.base_url
+        if "host.docker.internal" in base:
+            urls.extend(["http://localhost:11434", "http://127.0.0.1:11434", base])
+        elif "localhost" in base:
+            urls.extend([base, base.replace("localhost", "127.0.0.1"), "http://host.docker.internal:11434"])
+        elif "127.0.0.1" in base:
+            urls.extend([base, base.replace("127.0.0.1", "localhost"), "http://host.docker.internal:11434"])
+        else:
+            urls.append(base)
+        return list(dict.fromkeys(url.rstrip("/") for url in urls if url))
+
+    def health_check(self) -> dict:
+        last_exc: Exception | None = None
+        for base_url in self._candidate_base_urls():
+            try:
+                response = httpx.get(f"{base_url}/api/tags", timeout=httpx.Timeout(5.0, connect=2.0))
+                response.raise_for_status()
+                payload = response.json()
+                models = [item.get("name", "") for item in payload.get("models", [])]
+                return {
+                    "base_url": base_url,
+                    "model": self.model,
+                    "models": models,
+                    "model_available": self.model in models,
+                }
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+        raise RuntimeError(f"Ollama is not reachable: {last_exc}")
+
     def generate(self, prompt: str, temperature: float = 0.1) -> str:
-        response = httpx.post(
-            f"{self.base_url}/api/generate",
-            json={
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {"temperature": temperature},
-            },
-            timeout=120.0,
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data.get("response", "").strip()
+        last_exc: Exception | None = None
+        for base_url in self._candidate_base_urls():
+            try:
+                response = httpx.post(
+                    f"{base_url}/api/generate",
+                    json={
+                        "model": self.model,
+                        "prompt": prompt,
+                        "stream": False,
+                        "options": {"temperature": temperature},
+                    },
+                    timeout=httpx.Timeout(120.0, connect=5.0),
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data.get("response", "").strip()
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                logger.warning("Ollama candidate failed (%s): %s", base_url, exc)
+        raise RuntimeError(f"Ollama generation failed: {last_exc}")
 
 
 class TogetherProvider(LLMProvider):
@@ -291,10 +329,7 @@ class RoutedLLM:
         value = overrides.get(key)
         if value is None:
             return None
-        stripped = value.strip()
-        if key == "ollama_base_url" and ("127.0.0.1" in stripped or "localhost" in stripped):
-            stripped = stripped.replace("127.0.0.1", "host.docker.internal").replace("localhost", "host.docker.internal")
-        return stripped or None
+        return value.strip() or None
 
     def _build_provider(self, name: str, overrides: dict[str, str] | None) -> LLMProvider:
         if not overrides:

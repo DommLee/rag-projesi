@@ -11,6 +11,7 @@ echo.
 echo =======================================================
 echo.
 if "%START_DOCKER_INFRA%"=="" set START_DOCKER_INFRA=0
+if "%FORCE_LOCAL_API%"=="" set FORCE_LOCAL_API=1
 
 echo Adim 1: Altyapi kontrol ediliyor...
 echo Not: Varsayilan demo modu local API/UI acilisidir. Docker icin START_DOCKER_INFRA=1 kullan.

@@ -5,6 +5,7 @@ cd /d "%ROOT%"
 
 set SELECTED_PORT=
 set EXISTING_HEALTHY=0
+if /I "%FORCE_LOCAL_API%"=="1" goto :find_free_port
 for %%P in (18000 18001 18002 8088) do (
   curl.exe -fsS --max-time 2 "http://127.0.0.1:%%P/v1/health" >nul 2>nul
   if not errorlevel 1 (
@@ -14,6 +15,7 @@ for %%P in (18000 18001 18002 8088) do (
   )
 )
 
+:find_free_port
 for %%P in (18000 18001 18002 8088) do (
   powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $c = New-Object Net.Sockets.TcpClient('localhost',%%P); $c.Close(); exit 1 } catch { exit 0 }"
   if not errorlevel 1 (
@@ -36,6 +38,11 @@ echo %API_HOST_PORT%> logs\.runtime_api_port
 if "%EXISTING_HEALTHY%"=="1" (
   echo [30_run_api] Existing healthy API detected on http://localhost:%API_HOST_PORT%
   exit /b 0
+)
+
+if /I "%FORCE_LOCAL_API%"=="1" (
+  echo [30_run_api] FORCE_LOCAL_API=1, starting local API instead of Docker.
+  goto local_fallback
 )
 
 echo [30_run_api] Checking Docker daemon...

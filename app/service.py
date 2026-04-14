@@ -2282,6 +2282,21 @@ class BISTAgentService:
         started = time.perf_counter()
         preferred = (provider_pref or "").strip().lower()
         try:
+            if preferred == "ollama":
+                provider = self.llm._build_provider("ollama", provider_overrides or {})
+                if hasattr(provider, "health_check"):
+                    health = provider.health_check()
+                    latency_ms = round((time.perf_counter() - started) * 1000, 2)
+                    models = health.get("models", [])
+                    model = str(health.get("model", ""))
+                    model_note = "model bulundu" if health.get("model_available") else "model listede yok"
+                    return {
+                        "ok": True,
+                        "provider_used": "ollama",
+                        "latency_ms": latency_ms,
+                        "preview": f"Ollama bağlantısı hazır ({health.get('base_url')}); {len(models)} model görüldü, {model}: {model_note}.",
+                        "error": None,
+                    }
             text, provider_used = self.llm.generate_with_provider(
                 prompt,
                 provider_pref=provider_pref,
