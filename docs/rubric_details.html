@@ -200,6 +200,39 @@
                     </div>
                 </div>
             </section>
+            <!-- 6. Sentiment & Narrative Intelligence -->
+            <section class="glass p-6 rounded-2xl shadow-xl transition-all hover:scale-[1.01]">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="p-3 bg-cyan-500/10 rounded-lg text-cyan-500">
+                        <i data-lucide="bar-chart-3"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold">4.4 Duygu Analizi (Sentiment Analysis)</h2>
+                        <span class="text-sm text-slate-400">Analiz Katmanı: Finansal Sözlük & NLP</span>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <p class="text-slate-300"><strong class="text-white">Yöntem:</strong> Her bir veri parçası (chunk) için Türkçe finansal sözlük tabanlı bir duygu skoru (-1.0 ile 1.0 arası) hesaplanır. Gerektiğinde `HuggingFace` modelleriyle (BERT) derin analiz yapılabilir.</p>
+                        <p class="text-slate-300"><strong class="text-white">Neden:</strong> Piyasa anlatısındaki (narrative) değişimi ve haberlerin şirket üzerindeki olası nitel etkisini ölçmek için veriyi semantik olarak zenginleştiriyoruz.</p>
+                    </div>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                        <h3 class="text-sm font-mono text-cyan-400 mb-2 uppercase tracking-wider">Kod Kanıtları</h3>
+                        <ul class="text-sm space-y-2 font-mono">
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="file-code" class="w-4 h-4"></i> 
+                                <span class="text-slate-400">app/nlp/</span><span class="text-white">sentiment.py</span>
+                                <span class="text-slate-500">(Lexicon & Scorer)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <i data-lucide="file-code" class="w-4 h-4"></i> 
+                                <span class="text-slate-400">app/ingestion/</span><span class="text-white">chunking.py</span>
+                                <span class="text-slate-500">(Satır 111-139 Map)</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
         </div>
 
         <!-- Tech Stack Footer -->
