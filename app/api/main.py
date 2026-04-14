@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
@@ -30,6 +31,7 @@ from app.service import BISTAgentService
 from app.utils.logging import configure_logging
 
 configure_logging()
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 @asynccontextmanager

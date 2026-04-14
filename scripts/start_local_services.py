@@ -76,6 +76,9 @@ def main() -> int:
     if existing_pythonpath:
         pythonpath_parts.append(existing_pythonpath)
     env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
 
     api_proc = subprocess.Popen(
         [
@@ -92,6 +95,7 @@ def main() -> int:
         stdout=api_stdout,
         stderr=api_stderr,
         env=env,
+        creationflags=creationflags,
     )
     worker_proc = subprocess.Popen(
         [str(python_exe), "-m", "worker.main"],
@@ -99,6 +103,7 @@ def main() -> int:
         stdout=worker_stdout,
         stderr=worker_stderr,
         env=env,
+        creationflags=creationflags,
     )
 
     (logs / "api_local.pid").write_text(str(api_proc.pid), encoding="utf-8")
