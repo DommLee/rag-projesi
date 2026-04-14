@@ -840,7 +840,7 @@ export function DashboardApp({ initialTab = "overview" }) {
     const runtime = readRuntimeConfig();
     const storedApi = localStorage.getItem("bist-api-base"); const storedToken = localStorage.getItem("bist-api-token"); const storedProvider = localStorage.getItem("bist-provider-pref"); const storedOllamaBase = localStorage.getItem("bist-ollama-base"); const storedOllamaModel = localStorage.getItem("bist-ollama-model");
     setApiCandidates(runtime.apiCandidates);
-    setApiBase(storedApi || runtime.apiBase); if (storedToken) setApiToken(storedToken); if (storedProvider) setProviderPref(storedProvider); if (storedOllamaBase) setOllamaBaseUrl(storedOllamaBase); if (storedOllamaModel) setOllamaModel(storedOllamaModel);
+    setApiBase(runtime.apiBase || storedApi || FALLBACK_API); if (storedToken) setApiToken(storedToken); if (storedProvider) setProviderPref(storedProvider); if (storedOllamaBase) setOllamaBaseUrl(storedOllamaBase); if (storedOllamaModel) setOllamaModel(storedOllamaModel);
     const params = new URLSearchParams(window.location.search);
     const tickerParam = params.get("ticker");
     if (tickerParam) setWorkspaceTicker(tickerParam.toUpperCase());

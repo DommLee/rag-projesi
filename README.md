@@ -2,7 +2,7 @@
 
 <div align="center">
   <h3>🚀 Interactive FinTech Rubric Report & Documentation</h3>
-  <a href="https://dommlee.github.io/rag-projesi/docs/"><b>👉 https://dommlee.github.io/rag-projesi/docs/ 👈</b></a>
+  <a href="https://dommlee.github.io/rag-projesi/"><b>👉 https://dommlee.github.io/rag-projesi/ 👈</b></a>
 </div>
 
 Agentic RAG system for Turkish equity intelligence (BIST/KAP/Broker/News), with explicit non-advisory guardrails.
